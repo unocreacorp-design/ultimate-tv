@@ -134,6 +134,32 @@ body.full .osd{display:flex}
 .osd .ch{font:500 .9rem var(--mono);color:var(--accent)}
 .osd .help{color:#b3bfcc}
 
+/* Menú flotante de canales (pantalla completa) */
+.fmenu{position:absolute;top:0;bottom:0;left:0;z-index:2;width:min(30rem,44%);display:none;flex-direction:column;gap:.6rem;
+  padding:max(1.2rem, env(safe-area-inset-top,0px)) 1rem max(1rem, env(safe-area-inset-bottom,0px)) max(1.2rem, env(safe-area-inset-left,0px));
+  background:linear-gradient(90deg,rgba(6,10,16,.96),rgba(6,10,16,.88));backdrop-filter:blur(10px);border-right:1px solid var(--line);box-shadow:1.5rem 0 3rem rgba(0,0,0,.5)}
+body.full .fmenu.open{display:flex}
+.fhead{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.fhead b{font:700 1.15rem var(--display)}
+.fhead span{font:500 .75rem var(--mono);color:var(--muted)}
+.ftabs{display:flex;gap:.35rem}
+.ftab{flex:1;padding:.5rem .4rem;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);font-weight:700;font-size:.85rem;text-align:center;white-space:nowrap}
+.ftab.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ftab.mine.on{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.flist{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:.3rem;padding:.3rem}
+.flist .row{grid-template-columns:2rem 3rem minmax(0,1fr) auto;padding:.35rem .6rem .35rem .3rem}
+.flist .lg{width:3rem;height:2.1rem}
+.fhint{font-size:.75rem;color:var(--muted);display:flex;gap:.8rem;flex-wrap:wrap}
+.fhint kbd{font:500 .68rem var(--mono);padding:.05rem .35rem;border-radius:4px;border:1px solid var(--line);color:var(--fg)}
+.fempty{color:var(--muted);text-align:center;padding:2rem .5rem;font-size:.95rem}
+.row.dead{opacity:.45}
+.row.dead .tx small::after{content:" · sin señal ahora";color:var(--live)}
+.tab.mine{color:var(--accent-2)}
+.tab.mine.on{background:var(--accent);color:var(--ink)}
+.chip.kids{border-color:rgba(255,201,77,.5);color:var(--gold)}
+.chip.kids.on{background:var(--gold);color:#241a00;border-color:var(--gold)}
+.checking{font:500 .72rem var(--mono);color:var(--muted);margin-left:auto;flex-shrink:0}
+
 /* Ventanas emergentes */
 .sheet{position:fixed;inset:0;z-index:40;background:rgba(3,6,10,.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
   padding:max(1.5rem, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) max(1.5rem, env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
@@ -194,8 +220,8 @@ body.full .osd{display:flex}
   <header class="top">
     <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Ultimate <span>TV</span></h1></div>
     <nav class="tabs" aria-label="Secciones">
+      <button class="tab mine f" data-tab="mine" type="button">📺 Mis canales <span class="c" id="cMine">0</span></button>
       <button class="tab f" data-tab="fav" type="button">★ Favoritos <span class="c" id="cFav">0</span></button>
-      <button class="tab f" data-tab="mine" type="button">📺 Mis canales <span class="c" id="cMine">0</span></button>
       <button class="tab f" data-tab="explore" type="button">🌎 Explorar</button>
       <button class="tab f" data-tab="search" type="button">🔍 Buscar</button>
     </nav>
@@ -207,7 +233,7 @@ body.full .osd{display:flex}
 
   <section class="side" aria-label="Canales">
     <div class="tools" id="tools"></div>
-    <div class="listhead"><h2 id="listTitle">Canales</h2><span class="n" id="listCount"></span></div>
+    <div class="listhead"><h2 id="listTitle">Canales</h2><span class="n" id="listCount"></span><span class="checking" id="checking" hidden></span></div>
     <div class="list" id="list" role="list">
       <div class="state" id="loading"><div class="spin"></div><strong>Sintonizando el mundo…</strong><span>Descargando la guía de canales.</span><div class="bar"><i id="barFill"></i></div></div>
     </div>
@@ -225,21 +251,32 @@ body.full .osd{display:flex}
           <button class="act f" data-a="fav" type="button">☆ Favorito</button>
           <button class="act f" data-a="save" type="button">＋ Mis canales</button>
           <button class="act f" data-a="alt" type="button">⟳ Otra fuente</button>
+          <button class="act f" data-a="menu" type="button">▦ Lista de canales</button>
           <button class="act f" data-a="exit" type="button">✕ Salir de pantalla completa</button>
         </div>
-        <div class="help"><span><kbd>▲ ▼</kbd>cambiar de canal</span><span><kbd>OK</kbd>menú</span><span><kbd>Atrás</kbd>volver a la lista</span></div>
+        <div class="help"><span><kbd>▲ ▼</kbd>cambiar de canal</span><span><kbd>OK</kbd> o <kbd>◀</kbd>lista de canales</span><span><kbd>▶</kbd>opciones</span><span><kbd>Atrás</kbd>salir de pantalla completa</span></div>
       </div>
+      <aside class="fmenu" id="fmenu" aria-label="Lista de canales">
+        <div class="fhead"><b>Canales</b><span id="fcount"></span></div>
+        <div class="ftabs">
+          <button class="ftab mine" data-ft="mine" type="button" tabindex="-1">📺 Mis canales</button>
+          <button class="ftab" data-ft="fav" type="button" tabindex="-1">★ Favoritos</button>
+          <button class="ftab" data-ft="ctx" type="button" tabindex="-1">▦ Lista</button>
+        </div>
+        <div class="flist" id="flist"></div>
+        <div class="fhint"><span><kbd>▲▼</kbd>elegir</span><span><kbd>OK</kbd>ver</span><span><kbd>◀ ▶</kbd>cambiar lista</span><span><kbd>Atrás</kbd>cerrar</span></div>
+      </aside>
     </div>
     <div class="now" id="now" hidden>
       <div class="nowtop"><div class="lg" id="nLogo"></div><div style="min-width:0"><h3 id="nName"></h3><div class="meta" id="nMeta"></div></div></div>
       <div class="acts">
-        <button class="act primary f" data-a="full" type="button">⛶ Pantalla completa</button>
-        <button class="act f" data-a="fav" type="button">☆ Favorito</button>
         <button class="act f" data-a="save" type="button">＋ Mis canales</button>
+        <button class="act f" data-a="fav" type="button">☆ Favorito</button>
+        <button class="act primary f" data-a="full" type="button">⛶ Pantalla completa</button>
         <button class="act f" data-a="alt" type="button">⟳ Otra fuente</button>
       </div>
     </div>
-    <div class="help" id="help"><span><kbd>▲ ▼</kbd>moverse</span><span><kbd>OK</kbd>ver · OK otra vez: pantalla completa</span><span><kbd>▶</kbd>opciones del canal</span><span><kbd>Atrás</kbd>volver</span></div>
+    <div class="help" id="help"><span><kbd>▲ ▼</kbd>moverse</span><span><kbd>OK</kbd>ver · OK otra vez: pantalla completa</span><span><kbd>▶</kbd>guardar en Mis canales</span><span><kbd>Atrás</kbd>volver</span></div>
   </section>
 </div>
 
@@ -257,9 +294,12 @@ body.full .osd{display:flex}
 /* ================= Configuración ================= */
 const API="https://iptv-org.github.io/api/";
 const FILES=["streams","channels","feeds","logos","countries","languages","blocklist"];
+const FREETV="https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8";          // 2.ª lista: solo canales gratuitos oficiales
+const STATUS_URL="https://raw.githubusercontent.com/unocreacorp-design/ultimate-tv/main/status.json"; // revisión automática cada 4 h
+const KIDS=/\b(kids?|niñ[oa]s|infantil|junior|jr|cartoons?|toons?|baby|bebes?|peques|clan|pakapaka|zoomoo|pocoyo|anim(e|ados?|ation|acion)|dibujos?|chiquis?|kika|super ?3|boing|tiny ?pop|kidz|kinder)\b/i;
 const PAGE=60;
 const POPULAR=["CO","MX","ES","AR","US","PE","CL","VE","EC","DO","CR","UY","PA","GT","BO","PY"];
-const CAT_ES={animation:"Animación",auto:"Motor",business:"Negocios",classic:"Clásicos",comedy:"Comedia",cooking:"Cocina",culture:"Cultura",documentary:"Documentales",education:"Educación",entertainment:"Entretenimiento",family:"Familia",general:"General",kids:"Infantil",legislative:"Legislativo",lifestyle:"Estilo de vida",movies:"Películas",music:"Música",news:"Noticias",outdoor:"Aire libre",relax:"Relax",religious:"Religión",science:"Ciencia",series:"Series",shop:"Compras",sports:"Deportes",travel:"Viajes",weather:"Clima",public:"Pública",interactive:"Interactivo",undefined:"Otros"};
+const CAT_ES={animation:"Dibujitos",auto:"Motor",business:"Negocios",classic:"Clásicos",comedy:"Comedia",cooking:"Cocina",culture:"Cultura",documentary:"Documentales",education:"Educación",entertainment:"Entretenimiento",family:"Familia",general:"General",kids:"Dibujitos e infantil",legislative:"Legislativo",lifestyle:"Estilo de vida",movies:"Películas",music:"Música",news:"Noticias",outdoor:"Aire libre",relax:"Relax",religious:"Religión",science:"Ciencia",series:"Series",shop:"Compras",sports:"Deportes",travel:"Viajes",weather:"Clima",public:"Pública",interactive:"Interactivo",undefined:"Otros"};
 const CAT_IC={news:"📰",sports:"⚽",movies:"🎬",kids:"🧸",animation:"🎨",music:"🎵",documentary:"🌍",entertainment:"✨",series:"📺",religious:"🙏",education:"📚",general:"📡",cooking:"🍳",comedy:"😄",culture:"🎭",business:"💼",travel:"✈️",science:"🔬",lifestyle:"🌿",weather:"⛅",auto:"🏎️",family:"👪",classic:"🎞️",outdoor:"🏕️",shop:"🛍️",legislative:"🏛️",public:"🏛️",relax:"🌙",interactive:"🎮",undefined:"•"};
 const LANG2={spa:"es",eng:"en",por:"pt",fra:"fr",deu:"de",ita:"it",ara:"ar",rus:"ru",zho:"zh",jpn:"ja",kor:"ko",hin:"hi",tur:"tr",nld:"nl",pol:"pl",fas:"fa",ell:"el",ukr:"uk",ron:"ro",swe:"sv",cat:"ca",vie:"vi",ind:"id",tha:"th",heb:"he",hun:"hu",ces:"cs",srp:"sr",hrv:"hr",bul:"bg",urd:"ur",ben:"bn",tam:"ta",msa:"ms",aze:"az",kat:"ka",sqi:"sq",fin:"fi",dan:"da",nor:"no",slk:"sk",slv:"sl",lit:"lt",kaz:"kk",uzb:"uz",swa:"sw",tgl:"tl",kur:"ku",glg:"gl",eus:"eu"};
 
@@ -278,7 +318,14 @@ function toast(t){const n=$("toast");n.textContent=t;n.hidden=false;clearTimeout
 
 /* ================= Estado ================= */
 const IN_APP=/UltimateTVApp/.test(navigator.userAgent); // dentro de la app de Android TV
-const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,geo:true},store.get("state",{}));
+const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,geo:true,live:true},store.get("state",{}));
+/* Salud de canales: se revisa desde este mismo aparato (lo que de verdad se puede ver aquí).
+   Un canal caído se oculta; a las 6 horas se vuelve a revisar y, si regresó, aparece otra vez. */
+const TTL=6*3600e3;
+let health=store.get("health",{}),SERVER=null,SERVER_AT="";
+function hState(u){const h=health[u];if(h&&Date.now()-h[1]<TTL)return h[0];if(SERVER)return SERVER.has(u)?1:0;return -1;}
+const alive=g=>g.custom||g.sources.some(x=>hState(x.url)!==0);
+let hT;function setHealth(u,ok){health[u]=[ok?1:0,Date.now()];clearTimeout(hT);hT=setTimeout(()=>{const now=Date.now();for(const k in health)if(now-health[k][1]>TTL*2)delete health[k];store.set("health",health);},1500);}
 let favs=store.get("favs",[]);      // [{snapshot}]
 let mine=store.get("mine",[]);      // [{snapshot}] — lista propia, con número de canal
 let ALL=[],byId=new Map(),countries={},langs={},ready=false;
@@ -286,7 +333,7 @@ let view=[],shown=0,lastRow=null;
 let ctx={list:[],i:-1,name:""},src=0,hls=null,playingId=null;
 const listEl=$("list"),V=$("video");
 
-function save(){store.set("state",{tab:S.tab,country:S.country,cat:S.cat,lang:S.lang,https:S.https,geo:S.geo});}
+function save(){store.set("state",{tab:S.tab,country:S.country,cat:S.cat,lang:S.lang,https:S.https,geo:S.geo,live:S.live});}
 const snap=g=>({id:g.id,name:g.name,logo:g.logo||"",country:g.country||"",cats:g.cats||["undefined"],langs:g.langs||[],sources:g.sources.map(s=>({url:s.url,quality:s.quality||"",labels:s.labels||[]})),custom:!!g.custom});
 const isFav=id=>favs.some(x=>x.id===id);
 const isMine=id=>mine.some(x=>x.id===id);
@@ -322,8 +369,37 @@ async function load(){
     }
     if(!g.sources.some(x=>x.url===s.url))g.sources.push({url:s.url,quality:s.quality||"",labels:s.labels||[]});
   }
+  // Segunda lista legal (Free-TV): suma canales que no estén ya
+  try{
+    const known=new Set();for(const g of groups.values())for(const x of g.sources)known.add(x.url);
+    const byName={usa:"US",uk:"UK","united states":"US","united kingdom":"UK"},cLang={};for(const c of ctry){byName[norm(c.name)]=c.code;cLang[c.code]=c.languages||[];}
+    const t=await fetch(FREETV).then(r=>r.ok?r.text():"");
+    let cur=null;
+    for(const line of t.split(/\r?\n/)){
+      if(line.startsWith("#EXTINF")){
+        const name=(line.split(",").pop()||"").replace(/[ⓈⒼⓎ]/g,"").trim();
+        const logo=(line.match(/tvg-logo="([^"]*)"/)||[])[1]||"";
+        const grp=(line.match(/group-title="([^"]*)"/)||[])[1]||"";
+        cur={name,logo,country:byName[norm(grp)]||""};
+      }else if(cur&&/^https?:\/\//.test(line.trim())){
+        const url=line.trim();
+        if(/\.m3u8?(\?|$)/i.test(url)&&!known.has(url)){
+          known.add(url);
+          const key="free:"+norm(cur.name)+"@"+cur.country;
+          let g=groups.get(key);
+          if(!g){g={id:key,name:cur.name,country:cur.country,cats:["general"],langs:(cLang[cur.country]||[]).slice(0,1),logo:cur.logo,extra:"",sources:[]};groups.set(key,g);}
+          g.sources.push({url,quality:"",labels:[]});
+        }
+        cur=null;
+      }
+    }
+  }catch(e){console.warn("Free-TV no disponible",e);}
+  // Estado de los enlaces revisado en GitHub (si existe)
+  try{const st=await fetch(STATUS_URL+"?t="+Math.floor(Date.now()/600000)).then(r=>r.ok?r.json():null);if(st&&Array.isArray(st.ok)){SERVER=new Set(st.ok);SERVER_AT=st.updated||"";}}catch(e){}
   ALL=[...groups.values()];
   for(const g of ALL){
+    if(g.cats.includes("animation")&&!g.cats.includes("kids"))g.cats=["kids",...g.cats];
+    else if(KIDS.test(g.name)&&!g.cats.includes("kids"))g.cats=["kids",...g.cats.filter(c=>c!=="undefined"&&c!=="general")];
     g.sources.sort((a,b)=>(b.url.startsWith("https")-a.url.startsWith("https"))||((parseInt(b.quality)||0)-(parseInt(a.quality)||0)));
     g.https=g.sources.some(s=>s.url.startsWith("https"));
     g.geo=g.sources.every(s=>s.labels.includes("Geo-blocked"));
@@ -335,14 +411,14 @@ async function load(){
   }
   ALL.sort((a,b)=>a.name.localeCompare(b.name,"es"));
   if(S.country&&!countries[S.country])S.country="";
-  ready=true;
+  ready=true;startChecker();
   if(S.tab==="explore"&&(mine.length||favs.length)&&!store.get("visited",false)){/* primera vez: quedarse en Explorar */}
   store.set("visited",true);
   setTab(S.tab,true);
 }
 
 /* ================= Filtros y búsqueda ================= */
-const baseOk=g=>(!S.https||g.https)&&(!S.geo||!g.geo)&&(!S.lang||g.langs.includes(S.lang));
+const baseOk=g=>(!S.https||g.https)&&(!S.geo||!g.geo)&&(!S.lang||g.langs.includes(S.lang))&&(!S.live||alive(g));
 function exploreList(){return ALL.filter(g=>baseOk(g)&&(!S.country||g.country===S.country)&&(!S.cat||g.cats.includes(S.cat)));}
 function search(raw){
   const q=norm(raw),w=q.split(" ").filter(Boolean);if(!w.length)return[];
@@ -375,7 +451,8 @@ function buildTools(){
   if(S.tab==="explore"){
     T.innerHTML=`<button class="chip f" data-tool="country" type="button"><span class="k">País</span><span class="v">${c?c.flag+esc(c.name):"🌎 Todo el mundo"}</span> ▾</button>
       <button class="chip f" data-tool="cat" type="button"><span class="k">Categoría</span><span class="v">${S.cat?(CAT_IC[S.cat]||"")+" "+esc(CAT_ES[S.cat]||S.cat):"Todas"}</span> ▾</button>
-      <button class="chip f" data-tool="lang" type="button"><span class="k">Idioma</span><span class="v">${S.lang&&langs[S.lang]?esc(langs[S.lang].name):"Todos"}</span> ▾</button>`;
+      <button class="chip f" data-tool="lang" type="button"><span class="k">Idioma</span><span class="v">${S.lang&&langs[S.lang]?esc(langs[S.lang].name):"Todos"}</span> ▾</button>
+      <button class="chip kids f${S.cat==="kids"&&!S.country?" on":""}" data-tool="kids" type="button">🧸 Dibujitos</button>`;
   }else if(S.tab==="search"){
     const old=$("q")?$("q").value:"";
     T.innerHTML=`<label class="search" for="q"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -413,9 +490,33 @@ function refreshList(){
   $("listTitle").innerHTML=tf+esc(title);
   $("listCount").textContent=view.length?view.length.toLocaleString("es")+(view.length===1?" canal":" canales"):"";
   listEl.scrollTop=0;listEl.innerHTML="";shown=0;lastRow=null;
-  if(!view.length)listEl.innerHTML=empty;else renderMore();
+  if(!view.length)listEl.innerHTML=empty;else{renderMore();if(ready)enqueue(view,150);}
 }
 function updateCounts(){$("cFav").textContent=favs.length;$("cMine").textContent=mine.length;}
+
+/* ================= Revisor de canales ================= */
+const queue=[],queued=new Set();let running=0,checked=0;
+function canTry(u){return IN_APP||location.protocol!=="https:"||u.startsWith("https:");}
+function enqueue(list,max){let n=0;for(const g of list){if(max&&n++>=max)break;if(g.custom)continue;
+  for(const x of g.sources){const u=x.url,h=health[u];if(queued.has(u)||!canTry(u)||(h&&Date.now()-h[1]<TTL))continue;queued.add(u);queue.push(u);}}
+  pump();}
+async function probe(u){
+  const ctl=window.AbortController?new AbortController():null;const t=setTimeout(()=>ctl&&ctl.abort(),9000);
+  try{const r=await fetch(u,{cache:"no-store",signal:ctl&&ctl.signal});if(!r.ok)return 0;
+    let txt="";if(r.body&&r.body.getReader){const rd=r.body.getReader();const dec=new TextDecoder();while(txt.length<512){const c=await rd.read();if(c.done)break;txt+=dec.decode(c.value,{stream:true});}try{rd.cancel();}catch(e){}}else txt=(await r.text()).slice(0,512);
+    return /#EXTM3U/.test(txt)?1:0;}catch(e){return 0;}finally{clearTimeout(t);}
+}
+function pump(){
+  while(running<4&&queue.length){const u=queue.shift();running++;
+    probe(u).then(ok=>{setHealth(u,ok);checked++;running--;queued.delete(u);paintHealth(u);pump();});}
+  const c=$("checking");if(c){c.hidden=!(running||queue.length);c.textContent=`revisando señal… ${queue.length+running}`;}
+}
+function paintHealth(u){const rows=listEl.querySelectorAll(".row");for(const r of rows){const g=view[+r.dataset.i];if(g&&g.sources.some(x=>x.url===u))r.classList.toggle("dead",!alive(g));}}
+function startChecker(){
+  // revisa lo que ve el usuario, sus canales guardados y todo su país (aunque GitHub lo marque caído: puede ser bloqueo por país)
+  enqueue(mine.map(fresh));enqueue(favs.map(fresh));
+  if(S.country)enqueue(ALL.filter(g=>g.country===S.country));
+}
 
 /* ================= Lista ================= */
 function initials(n){return esc((String(n).replace(/[^\p{L}\p{N} ]/gu,"").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("")||"TV").toUpperCase());}
@@ -424,7 +525,7 @@ function rowHTML(g,i){
   const c=countries[g.country],q=g.sources[0]&&g.sources[0].quality;
   const sub=[c?c.flag+esc(c.name):(g.custom?"🔗 Enlace propio":""),esc(CAT_ES[g.cats[0]]||g.cats[0]||""),q?esc(q):""].filter(Boolean).join(" · ")+(!g.https&&!g.custom?' · <span class="w">solo app</span>':"");
   const playing=g.id===playingId;
-  return `<button class="row f${playing?" playing":""}" type="button" data-i="${i}" role="listitem">
+  return `<button class="row f${playing?" playing":""}${alive(g)?"":" dead"}" type="button" data-i="${i}" role="listitem">
     <span class="num">${playing?'<span class="eq"><i></i><i></i><i></i></span>':i+1}</span>
     <span class="lg">${logoHTML(g)}</span>
     <span class="tx"><b>${esc(g.name)}</b><small>${sub}</small></span>
@@ -473,8 +574,8 @@ function tune(i,keepSrc){
   $("idle").hidden=false;$("liveTag").hidden=true;
   if(!IN_APP&&location.protocol==="https:"&&s.url.startsWith("http:")){idle("Este canal solo abre en apps de TV","Su enlace no es seguro y el navegador lo bloquea. En Ajustes puedes descargar la lista M3U para TiviMate o VLC.");return;}
   idle("Sintonizando…",g.name,true);
-  const fail=()=>{if(playingId!==g.id)return;if(src<g.sources.length-1){src++;tune(i,true);}else idle("Sin señal en este momento","Este canal no está transmitiendo o no deja verse en el navegador. Prueba con el siguiente.");};
-  const ok=()=>{if(playingId===g.id){$("idle").hidden=true;$("liveTag").hidden=false;}};
+  const fail=()=>{if(playingId!==g.id)return;setHealth(s.url,0);if(src<g.sources.length-1){src++;tune(i,true);}else idle("Sin señal en este momento","Este canal no está transmitiendo o no deja verse en el navegador. Prueba con el siguiente.");};
+  const ok=()=>{if(playingId===g.id){setHealth(s.url,1);$("idle").hidden=true;$("liveTag").hidden=false;}};
   if(window.Hls&&Hls.isSupported()){
     hls=new Hls({maxBufferLength:20,manifestLoadingTimeOut:12000,fragLoadingTimeOut:15000});
     hls.on(Hls.Events.MANIFEST_PARSED,()=>V.play().catch(()=>idle("Oprime OK para reproducir","El televisor pide confirmar antes de empezar.")));
@@ -501,6 +602,8 @@ function paintActs(g){
   document.querySelectorAll('[data-a="alt"]').forEach(b=>b.hidden=g.sources.length<2);
 }
 const current=()=>ctx.list[ctx.i];
+// Cambiar de canal saltando los que no tienen señal
+function zap(d){const L=ctx.list;if(!L.length)return;let i=ctx.i;for(let k=0;k<L.length;k++){i=(i+d+L.length)%L.length;if(alive(L[i])||L[i].custom)break;}tune(i);if(isFull()){showOSD();if(fmOpen())fmRender();}}
 function toggleFav(){const g=current();if(!g)return;
   if(isFav(g.id)){favs=favs.filter(x=>x.id!==g.id);toast("Quitado de favoritos");}else{favs.push(snap(g));toast("★ Guardado en favoritos");}
   store.set("favs",favs);paintActs(g);updateCounts();softRefresh();}
@@ -519,15 +622,16 @@ function act(a){
   if(a==="save")toggleMine();
   if(a==="alt"){const g=current();if(g&&g.sources.length>1){src=(src+1)%g.sources.length;tune(ctx.i,true);}}
   if(a==="exit")exitFull();
+  if(a==="menu")fmShow();
 }
-document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b){act(b.dataset.a);if(document.body.classList.contains("full"))showOSD();}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b){act(b.dataset.a);if(isFull()&&b.dataset.a!=="menu")showOSD();}});
 
 /* Pantalla completa */
 let osdT;
 const isFull=()=>document.body.classList.contains("full");
 function enterFull(){
   if(!current())return;
-  document.body.classList.add("full");history.pushState({full:1},"");
+  document.body.classList.add("full");
   if(!IN_APP){try{const el=document.documentElement;const p=(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);if(p&&p.catch)p.catch(()=>{});}catch(e){}}
   showOSD();
 }
@@ -535,15 +639,43 @@ function exitFull(fromPop){
   if(!isFull())return false;
   document.body.classList.remove("full");hideOSD();
   try{if(document.fullscreenElement){const p=document.exitFullscreen();if(p&&p.catch)p.catch(()=>{});}}catch(e){}
-  if(!fromPop)history.back();
+  fmClose();
   const r=listEl.querySelector(".row.playing")||lastRow;if(r)focusRow(r);
   return true;
 }
 function showOSD(focusBtn){const o=$("osd");o.classList.remove("hide");clearTimeout(osdT);osdT=setTimeout(hideOSD,5000);if(focusBtn)o.querySelector(".act:not([hidden])").focus({preventScroll:true});}
 function hideOSD(){const o=$("osd");if(o.contains(document.activeElement))document.activeElement.blur();o.classList.add("hide");}
-$("screen").addEventListener("click",e=>{if(e.target.closest(".act"))return;if(!isFull()){if(current())enterFull();return;}$("osd").classList.contains("hide")?showOSD():hideOSD();});
+$("screen").addEventListener("click",e=>{if(e.target.closest(".act")||e.target.closest(".fmenu"))return;if(!isFull()){if(current())enterFull();return;}$("osd").classList.contains("hide")?showOSD():hideOSD();});
 $("screen").addEventListener("mousemove",()=>{if(isFull())showOSD();});
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&isFull())exitFull();});
+
+/* Menú flotante de canales (sobre el video, sin salir de pantalla completa) */
+const FM=$("fmenu"),FL=$("flist");let fm={tab:"ctx",list:[]},fmT;
+const fmOpen=()=>FM.classList.contains("open");
+function fmList(t){return t==="mine"?mine.map(fresh):t==="fav"?favs.map(fresh):ctx.list;}
+function fmRender(focusPlaying){
+  fm.list=fmList(fm.tab);
+  FM.querySelectorAll(".ftab").forEach(b=>b.classList.toggle("on",b.dataset.ft===fm.tab));
+  $("fcount").textContent=fm.list.length?fm.list.length+" canales":"";
+  if(!fm.list.length){FL.innerHTML=`<div class="fempty">${fm.tab==="mine"?"Aún no tienes canales propios.<br>Mientras ves uno, oprime ▶ y elige “＋ Mis canales”.":"Aún no tienes favoritos.<br>Mientras ves un canal, oprime ▶ y elige “☆ Favorito”."}</div>`;return;}
+  const prev=document.activeElement&&FL.contains(document.activeElement)?+document.activeElement.dataset.fi:-1;
+  FL.innerHTML=fm.list.slice(0,400).map((g,i)=>rowHTML(g,i).replace('class="row f','class="row frow f').replace(`data-i="${i}"`,`data-fi="${i}"`)).join("");
+  let fi=focusPlaying?fm.list.findIndex(g=>g.id===playingId):prev;if(fi<0)fi=0;
+  const el=FL.querySelector(`[data-fi="${fi}"]`);if(el){el.focus({preventScroll:true});keepIn(FL,el);}
+}
+function fmShow(tab){hideOSD();fm.tab=tab||(ctx.name==="Mis canales"?"mine":ctx.name==="Favoritos"?"fav":"ctx");FM.classList.add("open");fmRender(true);fmKick();}
+function fmClose(){if(!fmOpen())return false;FM.classList.remove("open");clearTimeout(fmT);if(FM.contains(document.activeElement))document.activeElement.blur();return true;}
+function fmKick(){clearTimeout(fmT);fmT=setTimeout(fmClose,12000);}
+function fmTab(d){const t=["mine","fav","ctx"];fm.tab=t[(t.indexOf(fm.tab)+d+3)%3];fmRender(true);fmKick();}
+function fmPick(i){const name=fm.tab==="mine"?"Mis canales":fm.tab==="fav"?"Favoritos":ctx.name;ctx={list:fm.list.slice(),i,name};tune(i);fmRender(true);fmKick();}
+FM.addEventListener("click",e=>{const t=e.target.closest(".ftab");if(t){fm.tab=t.dataset.ft;fmRender(true);fmKick();return;}const r=e.target.closest(".frow");if(r)fmPick(+r.dataset.fi);});
+function fmKey(e,dir){
+  fmKick();const a=document.activeElement,i=a&&a.dataset.fi!=null?+a.dataset.fi:-1;
+  if(dir==="up"||dir==="down"){e.preventDefault();const n=FL.querySelector(`[data-fi="${Math.max(0,Math.min(fm.list.length-1,i+(dir==="down"?1:-1)))}"]`)||FL.querySelector(".frow");if(n){n.focus({preventScroll:true});keepIn(FL,n);}return true;}
+  if(dir==="left"||dir==="right"){e.preventDefault();fmTab(dir==="right"?1:-1);return true;}
+  if(e.key==="Enter"||e.key===" "){e.preventDefault();if(i>=0)fmPick(i);return true;}
+  return false;
+}
 
 /* Cambio de canal por número (en Mis canales) */
 let zapBuf="",zapT;
@@ -552,7 +684,7 @@ function zapDigit(d){
   zapT=setTimeout(()=>{const n=+zapBuf;zapBuf="";z.hidden=true;
     if(!mine.length){toast("Primero guarda canales en Mis canales");return;}
     if(n<1||n>mine.length){toast(`Mis canales va del 1 al ${mine.length}`);return;}
-    ctx={list:mine.map(fresh),i:n-1,name:"Mis canales"};tune(n-1);
+    ctx={list:mine.map(fresh),i:n-1,name:"Mis canales"};tune(n-1);if(fmOpen())fmRender(true);
     if(S.tab==="mine"){const r=rowAt(n-1);if(r&&!isFull())focusRow(r);}
   },1200);
 }
@@ -562,11 +694,11 @@ let sheetBack=null,sheetOnClick=null;
 function openSheet(title,html,onClick,extra){
   sheetBack=document.activeElement;sheetOnClick=onClick;
   $("sheetTitle").textContent=title;$("sheetExtra").innerHTML=extra||"";$("sheetBody").innerHTML=html;
-  $("sheet").hidden=false;history.pushState({sheet:1},"");
+  $("sheet").hidden=false;
   const f=$("sheet").querySelector(".choice.on")||$("sheetBody").querySelector(".f")||$("sheetClose");
   f.focus({preventScroll:true});keepIn($("sheetBody"),f);
 }
-function closeSheet(fromPop){if($("sheet").hidden)return false;$("sheet").hidden=true;if(!fromPop)history.back();if(sheetBack&&document.contains(sheetBack))sheetBack.focus({preventScroll:true});return true;}
+function closeSheet(){if($("sheet").hidden)return false;$("sheet").hidden=true;if(sheetBack&&document.contains(sheetBack))sheetBack.focus({preventScroll:true});return true;}
 $("sheetClose").onclick=()=>closeSheet();
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet")){closeSheet();return;}if(sheetOnClick)sheetOnClick(e);});
 function keepIn(box,el){if(!box.contains(el))return;const b=box.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top<b.top+8)box.scrollTop-=b.top+8-r.top;else if(r.bottom>b.bottom-8)box.scrollTop+=r.bottom-b.bottom+8;}
@@ -614,6 +746,7 @@ function openAdd(){
 }
 function openSettings(){
   const html=`<button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>${IN_APP?"Solo enlaces seguros (https)":"Solo canales que se ven en el navegador"}<small>${IN_APP?"En la app puedes ver también los canales http. Actívalo solo si prefieres menos canales.":"Oculta los enlaces “http” que el navegador bloquea."}</small></span></button>
+    <button class="opt f" id="oL" type="button" aria-pressed="${S.live}"><span class="sw"></span><span>Ocultar canales sin señal<small>Se revisan solos; cuando un canal vuelve a transmitir, aparece de nuevo.${SERVER_AT?" Última revisión general: "+new Date(SERVER_AT).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"})+".":""}</small></span></button>
     <button class="opt f" id="oG" type="button" aria-pressed="${S.geo}"><span class="sw"></span><span>Ocultar canales con bloqueo por país<small>Algunos canales solo se ven desde su propio país.</small></span></button>
     ${IN_APP?"":`<button class="opt f" id="oX" type="button"><span>⤓</span><span>Descargar la lista actual en M3U<small>Para abrirla en TiviMate, VLC u otra app de IPTV.</small></span></button>`}
     ${mine.length&&!IN_APP?`<button class="opt f" id="oM" type="button"><span>⤓</span><span>Descargar Mis canales en M3U<small>${mine.length} canales guardados.</small></span></button>`:""}
@@ -621,6 +754,7 @@ function openSettings(){
   openSheet("Ajustes",html,e=>{
     const b=e.target.closest(".opt");if(!b)return;
     if(b.id==="oH"){S.https=!S.https;b.setAttribute("aria-pressed",S.https);save();refreshList();}
+    if(b.id==="oL"){S.live=!S.live;b.setAttribute("aria-pressed",S.live);save();refreshList();}
     if(b.id==="oG"){S.geo=!S.geo;b.setAttribute("aria-pressed",S.geo);save();refreshList();}
     if(b.id==="oX")exportM3U(view,"ultimate-tv-"+(S.tab==="explore"?(S.country||"mundo").toLowerCase():S.tab));
     if(b.id==="oM")exportM3U(mine.map(fresh),"ultimate-tv-mis-canales");
@@ -635,6 +769,7 @@ function exportM3U(L,name){
 }
 $("tools").addEventListener("click",e=>{const b=e.target.closest("[data-tool]");if(!b)return;const t=b.dataset.tool;
   if(!ready&&t!=="add"){toast("Espera a que cargue la guía");return;}
+  if(t==="kids"){if(S.cat==="kids"&&!S.country){S.cat="";S.country="CO";S.lang="";}else{S.cat="kids";S.country="";S.lang="spa";}buildTools();refreshList();focusFirstRow();return;}
   if(t==="country")openCountry();if(t==="cat")openCat();if(t==="lang")openLang();if(t==="add")openAdd();});
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)setTab(b.dataset.tab);});
 $("gearBtn").onclick=openSettings;
@@ -684,7 +819,7 @@ function nav(dir){
 }
 function back(){
   if(closeSheet())return true;
-  if(isFull()){if(!$("osd").classList.contains("hide")&&$("osd").contains(document.activeElement)){hideOSD();return true;}exitFull();return true;}
+  if(isFull()){if(fmClose())return true;if(!$("osd").classList.contains("hide")&&$("osd").contains(document.activeElement)){hideOSD();return true;}exitFull();return true;}
   const a=document.activeElement;
   if(a&&$("now").contains(a)){const r=(lastRow&&document.contains(lastRow))?lastRow:listEl.querySelector(".row");if(r){focusRow(r);return true;}}
   if(S.tab==="search"&&$("q")&&$("q").value){$("q").value="";refreshList();$("q").focus();return true;}
@@ -692,16 +827,22 @@ function back(){
 }
 document.addEventListener("keydown",e=>{
   const a=document.activeElement,typing=a&&(a.tagName==="INPUT"),dir=DIRS[e.key];
-  if(e.key==="Escape"||e.key==="GoBack"||e.key==="BrowserBack"||(e.key==="Backspace"&&!typing)){if(back())e.preventDefault();return;}
+  const kc=e.keyCode;
+  if(e.key==="Escape"||e.key==="GoBack"||e.key==="BrowserBack"||(e.key==="Backspace"&&!typing)||kc===461||kc===10009){if(back()){e.preventDefault();e.stopPropagation();}return;}
+  if(e.key==="ContextMenu"||kc===93||e.key==="ColorF0Red"||kc===403){if(current()){e.preventDefault();if(!isFull())enterFull();fmOpen()?fmClose():fmShow();}return;}
   if(/^[0-9]$/.test(e.key)&&!typing&&$("sheet").hidden){e.preventDefault();zapDigit(e.key);return;}
-  if(e.key==="ChannelUp"||e.key==="PageUp"){if(current()){e.preventDefault();tune(ctx.i-1);if(isFull())showOSD();}return;}
-  if(e.key==="ChannelDown"||e.key==="PageDown"){if(current()){e.preventDefault();tune(ctx.i+1);if(isFull())showOSD();}return;}
+  if(e.key==="ChannelUp"||e.key==="PageUp"){if(current()){e.preventDefault();zap(-1);}return;}
+  if(e.key==="ChannelDown"||e.key==="PageDown"){if(current()){e.preventDefault();zap(1);}return;}
   if(isFull()){
-    const onBtn=$("osd").contains(a)&&a!==document.body;
-    if(dir==="up"){e.preventDefault();tune(ctx.i-1);showOSD();return;}
-    if(dir==="down"){e.preventDefault();tune(ctx.i+1);showOSD();return;}
-    if(!onBtn&&(dir||e.key==="Enter"||e.key===" ")){e.preventDefault();showOSD(true);if(V.paused&&V.src)V.play().catch(()=>{});return;}
-    if(onBtn)showOSD();
+    if(fmOpen()){fmKey(e,dir);return;}
+    const onBtn=$("osd").contains(a)&&a!==document.body&&!$("osd").classList.contains("hide");
+    if(dir==="up"){e.preventDefault();zap(-1);return;}
+    if(dir==="down"){e.preventDefault();zap(1);return;}
+    if(!onBtn){
+      if(dir==="left"||e.key==="Enter"||e.key===" "){e.preventDefault();fmShow();if(V.paused&&V.src)V.play().catch(()=>{});return;}
+      if(dir==="right"){e.preventDefault();showOSD(true);return;}
+    }
+    if(onBtn){showOSD();if(dir==="left"&&a===$("osd").querySelector(".act:not([hidden])")){e.preventDefault();fmShow();return;}}
   }
   if(dir){
     if(typing&&(dir==="left"||dir==="right")){const at=a.selectionStart,len=a.value.length;if(at==null||(dir==="left"&&at>0)||(dir==="right"&&at<len))return;}
@@ -709,8 +850,14 @@ document.addEventListener("keydown",e=>{
   }
 });
 window.utvBack=()=>back();
-window.utvChannel=d=>{if(current()){tune(ctx.i+d);if(isFull())showOSD();}};
-window.addEventListener("popstate",()=>{if(!$("sheet").hidden){closeSheet(true);return;}if(isFull())exitFull(true);});
+window.utvChannel=d=>{if(current())zap(d);};
+// Trampa del botón Atrás del navegador: la página siempre recibe el Atrás y decide qué cerrar
+let lastBackTs=0;
+function trap(){try{history.pushState({utv:Date.now()},"");}catch(e){}}
+if(!IN_APP){trap();window.addEventListener("popstate",()=>{
+  if(back()){trap();return;}
+  const now=Date.now();if(now-lastBackTs<2500){history.back();return;}
+  lastBackTs=now;toast("Oprime Atrás otra vez para salir");trap();});}
 
 /* Reloj */
 function tick(){const d=new Date();$("clock").textContent=d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});}

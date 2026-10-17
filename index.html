@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ultimate TV</title>
+<meta name="description" content="Canales de TV gratuitos de todo el mundo, hechos para usarse con el control remoto.">
+<meta name="theme-color" content="#070b11">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<style>
+/* Layout de pantalla fija (sin scroll de página): lista de canales a la izquierda, pantalla en vista previa a la derecha.
+   La pantalla pasa a completa con OK. Solo oscuro a propósito: es para ver televisión. Naranja = color de la caja del TV Stick. */
+:root{
+  --bg:#070b11; --glass:rgba(22,32,46,.72); --row:#111a25; --row-hi:#1a2636; --line:rgba(150,180,215,.14);
+  --fg:#eef3f9; --muted:#8fa1b6; --dim:#5f7187;
+  --accent:#ff8a3d; --accent-2:#ffb27a; --ink:#1d0d02; --live:#ff4d5e; --gold:#ffc94d; --ok:#4fd1a1;
+  --display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{font-size:clamp(14px, 1.02vw, 24px);height:100%}
+body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font:1rem/1.4 var(--body);
+  background-image:radial-gradient(60rem 40rem at 85% -10%, rgba(255,138,61,.13), transparent 60%),radial-gradient(50rem 40rem at -10% 110%, rgba(64,140,255,.08), transparent 60%)}
+img{max-width:100%}
+[hidden]{display:none!important}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.f:focus{outline:none}
+.f:focus-visible{outline:none;box-shadow:0 0 0 .14rem var(--bg),0 0 0 .32rem var(--accent),0 0 1.4rem rgba(255,138,61,.45)}
+
+.app{height:100%;display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:0 1.4rem;
+  padding:max(.9rem, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) max(.9rem, env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+
+/* Barra superior */
+.top{grid-column:1/-1;display:flex;align-items:center;gap:1rem;padding-bottom:.9rem;min-width:0}
+.brand{display:flex;align-items:center;gap:.55rem;flex-shrink:0}
+.brand .dot{width:.7rem;height:.7rem;border-radius:50%;background:var(--live);box-shadow:0 0 .8rem var(--live);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.45}}
+.brand h1{font:700 1.5rem/1 var(--display);margin:0;letter-spacing:-.015em;white-space:nowrap}
+.brand h1 span{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tabs{display:flex;gap:.35rem;padding:.3rem;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);overflow-x:auto;scrollbar-width:none;min-width:0}
+.tab{display:flex;align-items:center;gap:.45rem;padding:.55rem 1.05rem;border-radius:999px;border:0;background:none;color:var(--muted);font-weight:700;white-space:nowrap}
+.tab .c{font:500 .7rem var(--mono);padding:.05rem .4rem;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
+.tab:hover{color:var(--fg)}
+.tab.on{background:var(--fg);color:var(--bg)}
+.tab.on .c{background:rgba(0,0,0,.12);color:var(--bg)}
+.clock{margin-left:auto;font:500 1.15rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0}
+.gear{width:2.6rem;height:2.6rem;border-radius:50%;border:1px solid var(--line);background:var(--glass);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Columna izquierda: herramientas + lista */
+.side{display:flex;flex-direction:column;min-height:0;min-width:0}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.7rem}
+.chip{display:flex;align-items:center;gap:.4rem;padding:.55rem .9rem;border-radius:12px;border:1px solid var(--line);background:var(--glass);font-weight:700;font-size:.92rem;white-space:nowrap;max-width:100%}
+.chip .k{font-weight:400;color:var(--muted)}
+.chip .v{overflow:hidden;text-overflow:ellipsis}
+.chip:hover{border-color:rgba(255,255,255,.3)}
+.chip.go{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.search{flex:1;display:flex;align-items:center;gap:.5rem;padding:0 .35rem 0 .9rem;border-radius:14px;border:1px solid var(--line);background:var(--glass);min-height:3rem}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 1.2rem rgba(255,138,61,.25)}
+.search input{flex:1;min-width:0;border:0;background:none;padding:.65rem 0;font-size:1.05rem}
+.search input:focus{outline:none}
+.ib{width:2.3rem;height:2.3rem;border-radius:10px;border:0;background:rgba(255,255,255,.07);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.listhead{display:flex;align-items:baseline;gap:.7rem;margin:0 0 .5rem .2rem}
+.listhead h2{font:700 1.2rem/1.2 var(--display);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.listhead .n{font:500 .78rem var(--mono);color:var(--muted);flex-shrink:0}
+.list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:.35rem .4rem .8rem .35rem;margin:0 -.4rem 0 -.35rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent;display:flex;flex-direction:column;gap:.35rem}
+.row{display:grid;grid-template-columns:2.4rem 3.6rem minmax(0,1fr) auto;align-items:center;gap:.75rem;width:100%;padding:.45rem .7rem .45rem .4rem;border-radius:14px;border:1px solid transparent;background:var(--row);text-align:left;flex-shrink:0}
+.row:hover{background:var(--row-hi)}
+.row:focus-visible{background:var(--row-hi);border-color:rgba(255,138,61,.6);transform:translateX(.25rem);transition:transform .12s}
+.row .num{font:500 .82rem var(--mono);color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.lg{width:3.6rem;height:2.5rem;border-radius:8px;background:linear-gradient(150deg,#22324a,#121b27);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lg img{max-width:82%;max-height:72%;object-fit:contain}
+.ph{font:700 .9rem var(--display);color:#b7c6d8;letter-spacing:.03em}
+.tx{min-width:0;display:flex;flex-direction:column}
+.tx b{font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx small{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx small .w{color:var(--accent-2)}
+.marks{display:flex;gap:.3rem;font-size:.9rem}
+.marks .s{color:var(--gold)} .marks .p{color:var(--ok)}
+.row.playing{background:linear-gradient(90deg,rgba(255,138,61,.22),var(--row) 70%)}
+.row.playing .num{color:var(--accent)}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:.8rem}
+.eq i{width:3px;background:var(--accent);animation:eq .9s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:30%}50%{height:100%}}
+.state{margin:auto 0;padding:2rem 1rem;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:.8rem}
+.state strong{font:700 1.25rem var(--display);color:var(--fg)}
+.state .big{font-size:2.4rem;line-height:1}
+.bar{height:.35rem;width:14rem;max-width:80%;background:rgba(255,255,255,.08);border-radius:1rem;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s}
+
+/* Columna derecha: pantalla + información */
+.stage{display:flex;flex-direction:column;gap:1rem;min-height:0;min-width:0}
+.screen{position:relative;width:100%;aspect-ratio:16/9;max-height:62vh;max-width:100%;border-radius:20px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 1px var(--line),0 1.5rem 4rem rgba(0,0,0,.6),0 0 6rem rgba(255,138,61,.08)}
+.screen video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+.idle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;text-align:center;padding:2rem;
+  background:radial-gradient(circle at 50% 40%,#1a2738,#05080c 70%)}
+.idle strong{font:700 1.6rem var(--display)}
+.idle span{color:var(--muted);max-width:36ch}
+.spin{width:2.6rem;height:2.6rem;border-radius:50%;border:.22rem solid rgba(255,255,255,.12);border-top-color:var(--accent);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.live{position:absolute;top:.9rem;left:.9rem;display:flex;align-items:center;gap:.4rem;padding:.25rem .6rem;border-radius:6px;background:rgba(0,0,0,.55);font:500 .72rem var(--mono);letter-spacing:.08em;color:#fff}
+.live::before{content:"";width:.45rem;height:.45rem;border-radius:50%;background:var(--live)}
+.zap{position:absolute;top:.9rem;right:1rem;font:500 2.6rem var(--mono);color:#fff;text-shadow:0 2px 12px #000}
+
+.now{display:flex;flex-direction:column;gap:.9rem;padding:1rem 1.1rem;border-radius:18px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px)}
+.nowtop{display:flex;align-items:center;gap:1rem;min-width:0}
+.nowtop .lg{width:5rem;height:3.4rem;flex-shrink:0}
+.nowtop h3{font:700 1.45rem/1.15 var(--display);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowtop .meta{color:var(--muted);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts{display:flex;gap:.5rem;flex-wrap:wrap}
+.act{display:flex;align-items:center;gap:.45rem;padding:.6rem 1rem;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:700;font-size:.92rem;white-space:nowrap}
+.act:hover{background:rgba(255,255,255,.1)}
+.act.primary{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.act.is-on{border-color:var(--gold);color:var(--gold)}
+.act.is-on.p{border-color:var(--ok);color:var(--ok)}
+.help{display:flex;gap:1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted);padding-left:.3rem}
+.help kbd{font:500 .7rem var(--mono);padding:.08rem .4rem;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg);margin-right:.3rem}
+
+/* Pantalla completa */
+body.full .screen{position:fixed;inset:0;z-index:30;max-height:none;border-radius:0;aspect-ratio:auto;box-shadow:none}
+.osd{position:absolute;left:0;right:0;bottom:0;display:none;flex-direction:column;gap:1rem;
+  padding:4rem max(2.2rem, env(safe-area-inset-right,0px)) calc(1.8rem + env(safe-area-inset-bottom,0px)) max(2.2rem, env(safe-area-inset-left,0px));
+  background:linear-gradient(transparent,rgba(0,0,0,.9) 50%);transition:opacity .25s}
+body.full .osd{display:flex}
+.osd.hide{opacity:0;pointer-events:none}
+.osd .nowtop h3{font-size:2.1rem;color:#fff}
+.osd .ch{font:500 .9rem var(--mono);color:var(--accent)}
+.osd .help{color:#b3bfcc}
+
+/* Ventanas emergentes */
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(3,6,10,.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+  padding:max(1.5rem, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) max(1.5rem, env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.panel{width:min(56rem,100%);max-height:100%;display:flex;flex-direction:column;border-radius:22px;background:#0e1620;border:1px solid var(--line);overflow:hidden;box-shadow:0 2rem 5rem rgba(0,0,0,.6)}
+.panel header{display:flex;align-items:center;gap:.8rem;padding:1rem 1.2rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel header h3{font:700 1.35rem var(--display);margin:0 auto 0 0}
+.panel .body{overflow-y:auto;overscroll-behavior:contain;padding:1rem 1.2rem 1.4rem}
+.panel h4{font:500 .7rem var(--mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:.3rem 0 .6rem}
+.choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(12.5rem,1fr));gap:.5rem;margin-bottom:1.1rem}
+.choice{display:flex;align-items:center;gap:.65rem;padding:.7rem .85rem;border-radius:12px;border:1px solid var(--line);background:var(--row);text-align:left;min-width:0}
+.choice:hover{background:var(--row-hi)}
+.choice .fl{font-size:1.25rem;line-height:1;flex-shrink:0}
+.choice .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.choice .n{font:500 .7rem var(--mono);color:var(--muted)}
+.choice.on{border-color:var(--accent);color:var(--accent-2)}
+.panel .search{flex:1 1 14rem;max-width:22rem;min-height:2.7rem}
+.form{display:flex;flex-direction:column;gap:.9rem}
+.form label{display:flex;flex-direction:column;gap:.35rem;font-size:.85rem;color:var(--muted)}
+.form input{padding:.75rem .9rem;border-radius:12px;border:1px solid var(--line);background:var(--row);font-size:1rem}
+.form input:focus{outline:none;border-color:var(--accent)}
+.note{font-size:.85rem;color:var(--muted);line-height:1.5}
+.note a{color:var(--accent-2)}
+.opt{display:flex;align-items:center;gap:.8rem;width:100%;padding:.85rem 1rem;border-radius:12px;border:1px solid var(--line);background:var(--row);text-align:left;margin-bottom:.5rem}
+.opt .sw{width:2.6rem;height:1.45rem;border-radius:1rem;background:rgba(255,255,255,.14);position:relative;flex-shrink:0;transition:background .15s}
+.opt .sw::after{content:"";position:absolute;top:.2rem;left:.2rem;width:1.05rem;height:1.05rem;border-radius:50%;background:#fff;transition:left .15s}
+.opt[aria-pressed="true"] .sw{background:var(--accent)}
+.opt[aria-pressed="true"] .sw::after{left:1.35rem}
+.opt small{display:block;color:var(--muted);font-size:.8rem}
+.toast{position:fixed;left:50%;bottom:calc(1.6rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;padding:.75rem 1.3rem;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:700;box-shadow:0 1rem 2rem rgba(0,0,0,.5);white-space:nowrap}
+
+/* Celular: pantalla arriba, lista abajo */
+@media (max-width:820px){
+  html{font-size:15px}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:.8rem}
+  .top{flex-wrap:wrap;padding-bottom:0;gap:.6rem}
+  .tabs{order:3;flex-basis:100%}
+  .tab{flex:1;justify-content:center;padding:.5rem .4rem;font-size:.85rem;gap:.3rem}
+  .tab .c{display:none}
+  .clock{display:none}
+  .gear{margin-left:auto}
+  .stage{grid-row:2;gap:.6rem}
+  .screen{border-radius:14px;max-height:34vh;width:auto;margin-inline:auto}
+  .now{padding:.7rem .8rem;gap:.6rem}
+  .nowtop .lg{width:3.6rem;height:2.5rem}
+  .nowtop h3{font-size:1.1rem}
+  .act{padding:.5rem .75rem;font-size:.85rem}
+  .help{display:none}
+  .side{grid-row:3}
+  .row:focus-visible{transform:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Ultimate <span>TV</span></h1></div>
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab f" data-tab="fav" type="button">★ Favoritos <span class="c" id="cFav">0</span></button>
+      <button class="tab f" data-tab="mine" type="button">📺 Mis canales <span class="c" id="cMine">0</span></button>
+      <button class="tab f" data-tab="explore" type="button">🌎 Explorar</button>
+      <button class="tab f" data-tab="search" type="button">🔍 Buscar</button>
+    </nav>
+    <div class="clock" id="clock"></div>
+    <button class="gear f" id="gearBtn" type="button" aria-label="Ajustes">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <section class="side" aria-label="Canales">
+    <div class="tools" id="tools"></div>
+    <div class="listhead"><h2 id="listTitle">Canales</h2><span class="n" id="listCount"></span></div>
+    <div class="list" id="list" role="list">
+      <div class="state" id="loading"><div class="spin"></div><strong>Sintonizando el mundo…</strong><span>Descargando la guía de canales.</span><div class="bar"><i id="barFill"></i></div></div>
+    </div>
+  </section>
+
+  <section class="stage" aria-label="Pantalla">
+    <div class="screen" id="screen">
+      <video id="video" playsinline></video>
+      <div class="idle" id="idle"><strong>Elige un canal</strong><span>Muévete por la lista con las flechas y oprime OK para verlo aquí. Oprime OK otra vez para pantalla completa.</span></div>
+      <div class="live" id="liveTag" hidden>EN VIVO</div>
+      <div class="zap" id="zap" hidden></div>
+      <div class="osd hide" id="osd">
+        <div class="nowtop"><div class="lg" id="oLogo"></div><div style="min-width:0"><div class="ch" id="oCh"></div><h3 id="oName"></h3><div class="meta" id="oMeta"></div></div></div>
+        <div class="acts">
+          <button class="act f" data-a="fav" type="button">☆ Favorito</button>
+          <button class="act f" data-a="save" type="button">＋ Mis canales</button>
+          <button class="act f" data-a="alt" type="button">⟳ Otra fuente</button>
+          <button class="act f" data-a="exit" type="button">✕ Salir de pantalla completa</button>
+        </div>
+        <div class="help"><span><kbd>▲ ▼</kbd>cambiar de canal</span><span><kbd>OK</kbd>menú</span><span><kbd>Atrás</kbd>volver a la lista</span></div>
+      </div>
+    </div>
+    <div class="now" id="now" hidden>
+      <div class="nowtop"><div class="lg" id="nLogo"></div><div style="min-width:0"><h3 id="nName"></h3><div class="meta" id="nMeta"></div></div></div>
+      <div class="acts">
+        <button class="act primary f" data-a="full" type="button">⛶ Pantalla completa</button>
+        <button class="act f" data-a="fav" type="button">☆ Favorito</button>
+        <button class="act f" data-a="save" type="button">＋ Mis canales</button>
+        <button class="act f" data-a="alt" type="button">⟳ Otra fuente</button>
+      </div>
+    </div>
+    <div class="help" id="help"><span><kbd>▲ ▼</kbd>moverse</span><span><kbd>OK</kbd>ver · OK otra vez: pantalla completa</span><span><kbd>▶</kbd>opciones del canal</span><span><kbd>Atrás</kbd>volver</span></div>
+  </section>
+</div>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="panel">
+    <header><h3 id="sheetTitle"></h3><span id="sheetExtra"></span><button class="act f" id="sheetClose" type="button">Cerrar</button></header>
+    <div class="body" id="sheetBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ================= Configuración ================= */
+const API="https://iptv-org.github.io/api/";
+const FILES=["streams","channels","feeds","logos","countries","languages","blocklist"];
+const PAGE=60;
+const POPULAR=["CO","MX","ES","AR","US","PE","CL","VE","EC","DO","CR","UY","PA","GT","BO","PY"];
+const CAT_ES={animation:"Animación",auto:"Motor",business:"Negocios",classic:"Clásicos",comedy:"Comedia",cooking:"Cocina",culture:"Cultura",documentary:"Documentales",education:"Educación",entertainment:"Entretenimiento",family:"Familia",general:"General",kids:"Infantil",legislative:"Legislativo",lifestyle:"Estilo de vida",movies:"Películas",music:"Música",news:"Noticias",outdoor:"Aire libre",relax:"Relax",religious:"Religión",science:"Ciencia",series:"Series",shop:"Compras",sports:"Deportes",travel:"Viajes",weather:"Clima",public:"Pública",interactive:"Interactivo",undefined:"Otros"};
+const CAT_IC={news:"📰",sports:"⚽",movies:"🎬",kids:"🧸",animation:"🎨",music:"🎵",documentary:"🌍",entertainment:"✨",series:"📺",religious:"🙏",education:"📚",general:"📡",cooking:"🍳",comedy:"😄",culture:"🎭",business:"💼",travel:"✈️",science:"🔬",lifestyle:"🌿",weather:"⛅",auto:"🏎️",family:"👪",classic:"🎞️",outdoor:"🏕️",shop:"🛍️",legislative:"🏛️",public:"🏛️",relax:"🌙",interactive:"🎮",undefined:"•"};
+const LANG2={spa:"es",eng:"en",por:"pt",fra:"fr",deu:"de",ita:"it",ara:"ar",rus:"ru",zho:"zh",jpn:"ja",kor:"ko",hin:"hi",tur:"tr",nld:"nl",pol:"pl",fas:"fa",ell:"el",ukr:"uk",ron:"ro",swe:"sv",cat:"ca",vie:"vi",ind:"id",tha:"th",heb:"he",hun:"hu",ces:"cs",srp:"sr",hrv:"hr",bul:"bg",urd:"ur",ben:"bn",tam:"ta",msa:"ms",aze:"az",kat:"ka",sqi:"sq",fin:"fi",dan:"da",nor:"no",slk:"sk",slv:"sl",lit:"lt",kaz:"kk",uzb:"uz",swa:"sw",tgl:"tl",kur:"ku",glg:"gl",eus:"eu"};
+
+/* ================= Utilidades ================= */
+const $=id=>document.getElementById(id);
+const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={
+  get(k,d){try{const v=localStorage.getItem("utv2_"+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem("utv2_"+k,JSON.stringify(v));}catch(e){}}
+};
+let regionDN=null,langDN=null;
+try{regionDN=new Intl.DisplayNames(["es"],{type:"region"});langDN=new Intl.DisplayNames(["es"],{type:"language"});}catch(e){}
+const dn=(d,c,fb)=>{try{const n=d&&d.of(c);return n&&n!==c?n:fb;}catch(e){return fb;}};
+function toast(t){const n=$("toast");n.textContent=t;n.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>n.hidden=true,2300);}
+
+/* ================= Estado ================= */
+const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:true,geo:true},store.get("state",{}));
+let favs=store.get("favs",[]);      // [{snapshot}]
+let mine=store.get("mine",[]);      // [{snapshot}] — lista propia, con número de canal
+let ALL=[],byId=new Map(),countries={},langs={},ready=false;
+let view=[],shown=0,lastRow=null;
+let ctx={list:[],i:-1,name:""},src=0,hls=null,playingId=null;
+const listEl=$("list"),V=$("video");
+
+function save(){store.set("state",{tab:S.tab,country:S.country,cat:S.cat,lang:S.lang,https:S.https,geo:S.geo});}
+const snap=g=>({id:g.id,name:g.name,logo:g.logo||"",country:g.country||"",cats:g.cats||["undefined"],langs:g.langs||[],sources:g.sources.map(s=>({url:s.url,quality:s.quality||"",labels:s.labels||[]})),custom:!!g.custom});
+const isFav=id=>favs.some(x=>x.id===id);
+const isMine=id=>mine.some(x=>x.id===id);
+const fresh=x=>byId.get(x.id)||x; // usa los enlaces más nuevos si el canal sigue en la lista
+
+/* ================= Datos ================= */
+async function load(){
+  let done=0;
+  const res=await Promise.all(FILES.map(f=>fetch(API+f+".json").then(r=>{if(!r.ok)throw new Error(f);return r.json();}).then(j=>{done++;const b=$("barFill");if(b)b.style.width=(done/FILES.length*100)+"%";return j;})));
+  const [streams,channels,feeds,logos,ctry,languages,blocklist]=res;
+  const blocked=new Set(blocklist.map(b=>b.channel));
+  const ch=new Map(channels.map(c=>[c.id,c]));
+  const feedMap=new Map(),mainFeed=new Map();
+  for(const f of feeds){feedMap.set(f.channel+"@"+f.id,f);if(f.is_main)mainFeed.set(f.channel,f);}
+  const logoMap=new Map();
+  for(const l of logos){const c=logoMap.get(l.channel);if(!c||(!l.feed&&c.feed)||(l.in_use&&!c.in_use))logoMap.set(l.channel,l);}
+  for(const c of ctry)countries[c.code]={code:c.code,name:dn(regionDN,c.code==="UK"?"GB":c.code,c.name),flag:c.flag||"🏳️",n:0};
+  for(const l of languages){const two=LANG2[l.code];const n=two?dn(langDN,two,null):null;langs[l.code]={code:l.code,name:n?n[0].toUpperCase()+n.slice(1):l.name,n:0};}
+  const groups=new Map();
+  for(const s of streams){
+    const c=s.channel?ch.get(s.channel):null;
+    if(c&&(c.is_nsfw||c.closed||blocked.has(c.id)))continue;
+    if(s.referrer||s.user_agent)continue;           // necesitan cabeceras que el navegador no puede enviar
+    const key=c?c.id+"@"+(s.feed||""):"url:"+s.url;
+    let g=groups.get(key);
+    if(!g){
+      const feed=(s.feed&&feedMap.get(s.channel+"@"+s.feed))||(c&&mainFeed.get(c.id))||null;
+      const lg=c&&logoMap.get(c.id);
+      g={id:key,name:c?c.name+(feed&&!feed.is_main&&s.feed?" "+feed.name:""):(s.title||"Canal"),country:c?c.country:"",
+         cats:c&&c.categories&&c.categories.length?c.categories:["undefined"],langs:feed?feed.languages:[],logo:lg?lg.url:"",
+         extra:c?[...(c.alt_names||[]),c.network||""].join(" "):"",sources:[]};
+      groups.set(key,g);
+    }
+    if(!g.sources.some(x=>x.url===s.url))g.sources.push({url:s.url,quality:s.quality||"",labels:s.labels||[]});
+  }
+  ALL=[...groups.values()];
+  for(const g of ALL){
+    g.sources.sort((a,b)=>(b.url.startsWith("https")-a.url.startsWith("https"))||((parseInt(b.quality)||0)-(parseInt(a.quality)||0)));
+    g.https=g.sources.some(s=>s.url.startsWith("https"));
+    g.geo=g.sources.every(s=>s.labels.includes("Geo-blocked"));
+    g.nName=norm(g.name);
+    g.nAll=norm(g.name+" "+g.extra+" "+(countries[g.country]?countries[g.country].name:"")+" "+g.cats.map(c=>CAT_ES[c]||c).join(" "));
+    if(countries[g.country])countries[g.country].n++;
+    for(const l of g.langs)if(langs[l])langs[l].n++;
+    byId.set(g.id,g);
+  }
+  ALL.sort((a,b)=>a.name.localeCompare(b.name,"es"));
+  if(S.country&&!countries[S.country])S.country="";
+  ready=true;
+  if(S.tab==="explore"&&(mine.length||favs.length)&&!store.get("visited",false)){/* primera vez: quedarse en Explorar */}
+  store.set("visited",true);
+  setTab(S.tab,true);
+}
+
+/* ================= Filtros y búsqueda ================= */
+const baseOk=g=>(!S.https||g.https)&&(!S.geo||!g.geo)&&(!S.lang||g.langs.includes(S.lang));
+function exploreList(){return ALL.filter(g=>baseOk(g)&&(!S.country||g.country===S.country)&&(!S.cat||g.cats.includes(S.cat)));}
+function search(raw){
+  const q=norm(raw),w=q.split(" ").filter(Boolean);if(!w.length)return[];
+  const out=[];
+  for(const g of ALL){
+    if(!baseOk(g))continue;
+    if(!w.every(x=>g.nAll.includes(x)))continue;
+    let s=0;
+    if(g.nName===q)s+=100;else if(g.nName.startsWith(q))s+=60;else if((" "+g.nName).includes(" "+w[0]))s+=35;else if(g.nName.includes(w[0]))s+=15;
+    if(g.country===S.country)s+=20;
+    if(isMine(g.id)||isFav(g.id))s+=10;
+    out.push([s,g]);
+  }
+  out.sort((a,b)=>b[0]-a[0]||a[1].name.localeCompare(b[1].name,"es"));
+  return out.slice(0,400).map(x=>x[1]);
+}
+
+/* ================= Secciones ================= */
+function setTab(t,first){
+  S.tab=t;save();
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  buildTools();
+  refreshList();
+  if(t==="search"&&!first){const q=$("q");if(q)q.focus();}
+  else if(!first)focusFirstRow();
+  if(first)focusFirstRow();
+}
+function buildTools(){
+  const T=$("tools"),c=countries[S.country];
+  if(S.tab==="explore"){
+    T.innerHTML=`<button class="chip f" data-tool="country" type="button"><span class="k">País</span><span class="v">${c?c.flag+" "+esc(c.name):"🌎 Todo el mundo"}</span> ▾</button>
+      <button class="chip f" data-tool="cat" type="button"><span class="k">Categoría</span><span class="v">${S.cat?(CAT_IC[S.cat]||"")+" "+esc(CAT_ES[S.cat]||S.cat):"Todas"}</span> ▾</button>
+      <button class="chip f" data-tool="lang" type="button"><span class="k">Idioma</span><span class="v">${S.lang&&langs[S.lang]?esc(langs[S.lang].name):"Todos"}</span> ▾</button>`;
+  }else if(S.tab==="search"){
+    const old=$("q")?$("q").value:"";
+    T.innerHTML=`<label class="search" for="q"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" class="f" type="search" placeholder="Nombre del canal, país o tema…" autocomplete="off" enterkeyhint="search" value="${esc(old)}">
+      ${SR?'<button class="ib f" id="mic" type="button" aria-label="Buscar por voz">🎤</button>':""}</label>`;
+    const q=$("q");let t;
+    q.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(refreshList,250);});
+    q.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(t);refreshList();focusFirstRow();}});
+    if(SR)$("mic").onclick=voice;
+  }else if(S.tab==="mine"){
+    T.innerHTML=`<button class="chip go f" data-tool="add" type="button">＋ Agregar canal con enlace</button>`;
+  }else T.innerHTML="";
+}
+function refreshList(){
+  updateCounts();
+  if(!ready)return;
+  let title="",empty="";
+  if(S.tab==="explore"){
+    view=exploreList();const c=countries[S.country];
+    title=(S.cat?(CAT_ES[S.cat]||S.cat)+" · ":"")+(c?c.flag+" "+c.name:"🌎 Todo el mundo");
+    empty=`<div class="state"><div class="big">📡</div><strong>No hay canales con estos filtros</strong><span>Prueba otra categoría, otro idioma o “Todo el mundo”.</span></div>`;
+  }else if(S.tab==="search"){
+    const q=$("q")?$("q").value.trim():"";
+    view=q?search(q):[];
+    title=q?`Resultados para “${q}”`:"Buscar en todo el mundo";
+    empty=q?`<div class="state"><div class="big">🔎</div><strong>No encontramos “${esc(q)}”</strong><span>Revisa cómo se escribe o usa menos palabras.${S.https?" También puedes activar los canales “solo app” en Ajustes.":""}</span></div>`
+           :`<div class="state"><div class="big">🔍</div><strong>¿Qué quieres ver?</strong><span>Escribe el nombre de un canal, un país o un tema, como “noticias” o “fútbol”. Busca en todos los países a la vez.</span></div>`;
+  }else if(S.tab==="fav"){
+    view=favs.map(fresh);title="★ Mis favoritos";
+    empty=`<div class="state"><div class="big">⭐</div><strong>Aún no tienes favoritos</strong><span>Mientras ves un canal, oprime ▶ y elige “☆ Favorito”. Aparecerán aquí.</span></div>`;
+  }else{
+    view=mine.map(fresh);title="📺 Mis canales";
+    empty=`<div class="state"><div class="big">📺</div><strong>Arma tu propia lista</strong><span>Cuando un canal te guste, oprime ▶ y elige “＋ Mis canales”. Tendrán su propio número para cambiarlos con el control. También puedes agregar uno con su enlace.</span></div>`;
+  }
+  $("listTitle").textContent=title;
+  $("listCount").textContent=view.length?view.length.toLocaleString("es")+(view.length===1?" canal":" canales"):"";
+  listEl.scrollTop=0;listEl.innerHTML="";shown=0;lastRow=null;
+  if(!view.length)listEl.innerHTML=empty;else renderMore();
+}
+function updateCounts(){$("cFav").textContent=favs.length;$("cMine").textContent=mine.length;}
+
+/* ================= Lista ================= */
+function initials(n){return esc((String(n).replace(/[^\p{L}\p{N} ]/gu,"").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("")||"TV").toUpperCase());}
+function logoHTML(g){return g.logo?`<img src="${esc(g.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-ph="${initials(g.name)}">`:`<span class="ph">${initials(g.name)}</span>`;}
+function rowHTML(g,i){
+  const c=countries[g.country],q=g.sources[0]&&g.sources[0].quality;
+  const sub=[c?c.flag+" "+esc(c.name):(g.custom?"🔗 Enlace propio":""),esc(CAT_ES[g.cats[0]]||g.cats[0]||""),q?esc(q):""].filter(Boolean).join(" · ")+(!g.https&&!g.custom?' · <span class="w">solo app</span>':"");
+  const playing=g.id===playingId;
+  return `<button class="row f${playing?" playing":""}" type="button" data-i="${i}" role="listitem">
+    <span class="num">${playing?'<span class="eq"><i></i><i></i><i></i></span>':i+1}</span>
+    <span class="lg">${logoHTML(g)}</span>
+    <span class="tx"><b>${esc(g.name)}</b><small>${sub}</small></span>
+    <span class="marks">${isFav(g.id)?'<span class="s">★</span>':""}${isMine(g.id)&&S.tab!=="mine"?'<span class="p">📌</span>':""}</span>
+  </button>`;
+}
+function renderMore(){
+  if(shown>=view.length)return;
+  const n=Math.min(view.length,shown+PAGE);
+  let h="";for(let i=shown;i<n;i++)h+=rowHTML(view[i],i);
+  listEl.insertAdjacentHTML("beforeend",h);shown=n;
+}
+listEl.addEventListener("scroll",()=>{if(listEl.scrollTop+listEl.clientHeight>listEl.scrollHeight-500)renderMore();},{passive:true});
+document.addEventListener("error",e=>{const t=e.target;if(t.tagName==="IMG"&&t.dataset.ph){const s=document.createElement("span");s.className="ph";s.textContent=t.dataset.ph;t.replaceWith(s);}},true);
+function rowAt(i){while(i>=shown&&shown<view.length)renderMore();return listEl.querySelector(`.row[data-i="${i}"]`);}
+// Mantiene la fila visible moviendo SOLO la lista (nunca la página)
+function keepVisible(el){
+  const box=listEl.getBoundingClientRect(),r=el.getBoundingClientRect(),pad=Math.min(80,box.height/4);
+  if(r.top<box.top+pad)listEl.scrollTop-=(box.top+pad-r.top);
+  else if(r.bottom>box.bottom-pad)listEl.scrollTop+=(r.bottom-(box.bottom-pad));
+}
+function focusRow(el){if(!el)return;el.focus({preventScroll:true});keepVisible(el);lastRow=el;}
+function focusFirstRow(){const r=listEl.querySelector(".row");if(r)focusRow(r);else{const t=$("tools").querySelector(".f")||document.querySelector(".tab.on");if(t)t.focus({preventScroll:true});}}
+function markPlaying(){
+  listEl.querySelectorAll(".row.playing").forEach(r=>{r.classList.remove("playing");r.querySelector(".num").textContent=+r.dataset.i+1;});
+  view.forEach((g,i)=>{if(g.id===playingId&&i<shown){const r=listEl.querySelector(`.row[data-i="${i}"]`);if(r){r.classList.add("playing");r.querySelector(".num").innerHTML='<span class="eq"><i></i><i></i><i></i></span>';}}});
+}
+listEl.addEventListener("click",e=>{
+  const r=e.target.closest(".row");if(!r)return;
+  const i=+r.dataset.i,g=view[i];
+  lastRow=r;
+  if(g.id===playingId){enterFull();return;}   // OK sobre el canal que ya suena = pantalla completa
+  ctx={list:view.slice(),i,name:$("listTitle").textContent};
+  tune(i);
+});
+
+/* ================= Reproductor ================= */
+function tune(i,keepSrc){
+  const L=ctx.list;if(!L.length)return;
+  if(i<0)i=L.length-1;if(i>=L.length)i=0;
+  ctx.i=i;if(!keepSrc)src=0;
+  const g=L[i];playingId=g.id;
+  paintNow(g);markPlaying();
+  const s=g.sources[src];
+  stop();
+  $("idle").hidden=false;$("liveTag").hidden=true;
+  if(location.protocol==="https:"&&s.url.startsWith("http:")){idle("Este canal solo abre en apps de TV","Su enlace no es seguro y el navegador lo bloquea. En Ajustes puedes descargar la lista M3U para TiviMate o VLC.");return;}
+  idle("Sintonizando…",g.name,true);
+  const fail=()=>{if(playingId!==g.id)return;if(src<g.sources.length-1){src++;tune(i,true);}else idle("Sin señal en este momento","Este canal no está transmitiendo o no deja verse en el navegador. Prueba con el siguiente.");};
+  const ok=()=>{if(playingId===g.id){$("idle").hidden=true;$("liveTag").hidden=false;}};
+  if(window.Hls&&Hls.isSupported()){
+    hls=new Hls({maxBufferLength:20,manifestLoadingTimeOut:12000,fragLoadingTimeOut:15000});
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>V.play().catch(()=>idle("Oprime OK para reproducir","El televisor pide confirmar antes de empezar.")));
+    hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)fail();});
+    hls.loadSource(s.url);hls.attachMedia(V);
+  }else{V.src=s.url;V.onerror=fail;V.play().catch(()=>{});}
+  V.onplaying=ok;
+}
+function stop(){if(hls){hls.destroy();hls=null;}V.onerror=null;V.onplaying=null;V.removeAttribute("src");V.load();}
+function idle(t,s,spin){$("idle").innerHTML=(spin?'<div class="spin"></div>':"")+`<strong>${esc(t)}</strong><span>${esc(s)}</span>`;$("idle").hidden=false;}
+function paintNow(g){
+  const c=countries[g.country],L=ctx.list;
+  const meta=[c?c.flag+" "+c.name:(g.custom?"🔗 Enlace propio":""),(g.cats||[]).map(x=>CAT_ES[x]||x).join(", "),g.sources.length>1?`fuente ${src+1} de ${g.sources.length}`:""].filter(Boolean).join("  ·  ");
+  $("now").hidden=false;
+  $("nLogo").innerHTML=logoHTML(g);$("nName").textContent=g.name;$("nMeta").textContent=meta;
+  $("oLogo").innerHTML=logoHTML(g);$("oName").textContent=g.name;$("oMeta").textContent=meta;
+  $("oCh").textContent=`${ctx.i+1} / ${L.length} · ${ctx.name}`;
+  paintActs(g);
+}
+function paintActs(g){
+  const f=isFav(g.id),m=isMine(g.id);
+  document.querySelectorAll('[data-a="fav"]').forEach(b=>{b.textContent=f?"★ En favoritos":"☆ Favorito";b.classList.toggle("is-on",f);});
+  document.querySelectorAll('[data-a="save"]').forEach(b=>{b.textContent=m?"📌 En Mis canales":"＋ Mis canales";b.classList.toggle("is-on",m);b.classList.toggle("p",m);});
+  document.querySelectorAll('[data-a="alt"]').forEach(b=>b.hidden=g.sources.length<2);
+}
+const current=()=>ctx.list[ctx.i];
+function toggleFav(){const g=current();if(!g)return;
+  if(isFav(g.id)){favs=favs.filter(x=>x.id!==g.id);toast("Quitado de favoritos");}else{favs.push(snap(g));toast("★ Guardado en favoritos");}
+  store.set("favs",favs);paintActs(g);updateCounts();softRefresh();}
+function toggleMine(){const g=current();if(!g)return;
+  if(isMine(g.id)){const n=mine.findIndex(x=>x.id===g.id)+1;mine=mine.filter(x=>x.id!==g.id);toast(`Quitado de Mis canales (era el ${n})`);}
+  else{mine.push(snap(g));toast(`📌 Guardado como canal ${mine.length} en Mis canales`);}
+  store.set("mine",mine);paintActs(g);updateCounts();softRefresh();}
+// Repinta marcas sin perder la posición de la lista
+function softRefresh(){
+  if((S.tab==="fav"||S.tab==="mine")){const fid=document.activeElement&&document.activeElement.dataset.i;const st=listEl.scrollTop;refreshList();listEl.scrollTop=st;if(fid!=null){const r=listEl.querySelector(`.row[data-i="${Math.min(+fid,view.length-1)}"]`);if(r&&document.activeElement===document.body)focusRow(r);}return;}
+  listEl.querySelectorAll(".row").forEach(r=>{const g=view[+r.dataset.i];r.querySelector(".marks").innerHTML=(isFav(g.id)?'<span class="s">★</span>':"")+(isMine(g.id)?'<span class="p">📌</span>':"");});
+}
+function act(a){
+  if(a==="full")enterFull();
+  if(a==="fav")toggleFav();
+  if(a==="save")toggleMine();
+  if(a==="alt"){const g=current();if(g&&g.sources.length>1){src=(src+1)%g.sources.length;tune(ctx.i,true);}}
+  if(a==="exit")exitFull();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b){act(b.dataset.a);if(document.body.classList.contains("full"))showOSD();}});
+
+/* Pantalla completa */
+let osdT;
+const isFull=()=>document.body.classList.contains("full");
+function enterFull(){
+  if(!current())return;
+  document.body.classList.add("full");history.pushState({full:1},"");
+  try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);}catch(e){}
+  showOSD();
+}
+function exitFull(fromPop){
+  if(!isFull())return false;
+  document.body.classList.remove("full");hideOSD();
+  try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}
+  if(!fromPop)history.back();
+  const r=listEl.querySelector(".row.playing")||lastRow;if(r)focusRow(r);
+  return true;
+}
+function showOSD(focusBtn){const o=$("osd");o.classList.remove("hide");clearTimeout(osdT);osdT=setTimeout(hideOSD,5000);if(focusBtn)o.querySelector(".act:not([hidden])").focus({preventScroll:true});}
+function hideOSD(){const o=$("osd");if(o.contains(document.activeElement))document.activeElement.blur();o.classList.add("hide");}
+$("screen").addEventListener("click",e=>{if(e.target.closest(".act"))return;if(!isFull()){if(current())enterFull();return;}$("osd").classList.contains("hide")?showOSD():hideOSD();});
+$("screen").addEventListener("mousemove",()=>{if(isFull())showOSD();});
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&isFull())exitFull();});
+
+/* Cambio de canal por número (en Mis canales) */
+let zapBuf="",zapT;
+function zapDigit(d){
+  zapBuf=(zapBuf+d).slice(-3);const z=$("zap");z.textContent=zapBuf;z.hidden=false;clearTimeout(zapT);
+  zapT=setTimeout(()=>{const n=+zapBuf;zapBuf="";z.hidden=true;
+    if(!mine.length){toast("Primero guarda canales en Mis canales");return;}
+    if(n<1||n>mine.length){toast(`Mis canales va del 1 al ${mine.length}`);return;}
+    ctx={list:mine.map(fresh),i:n-1,name:"Mis canales"};tune(n-1);
+    if(S.tab==="mine"){const r=rowAt(n-1);if(r&&!isFull())focusRow(r);}
+  },1200);
+}
+
+/* ================= Ventanas ================= */
+let sheetBack=null,sheetOnClick=null;
+function openSheet(title,html,onClick,extra){
+  sheetBack=document.activeElement;sheetOnClick=onClick;
+  $("sheetTitle").textContent=title;$("sheetExtra").innerHTML=extra||"";$("sheetBody").innerHTML=html;
+  $("sheet").hidden=false;history.pushState({sheet:1},"");
+  const f=$("sheet").querySelector(".choice.on")||$("sheetBody").querySelector(".f")||$("sheetClose");
+  f.focus({preventScroll:true});keepIn($("sheetBody"),f);
+}
+function closeSheet(fromPop){if($("sheet").hidden)return false;$("sheet").hidden=true;if(!fromPop)history.back();if(sheetBack&&document.contains(sheetBack))sheetBack.focus({preventScroll:true});return true;}
+$("sheetClose").onclick=()=>closeSheet();
+$("sheet").addEventListener("click",e=>{if(e.target===$("sheet")){closeSheet();return;}if(sheetOnClick)sheetOnClick(e);});
+function keepIn(box,el){if(!box.contains(el))return;const b=box.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top<b.top+8)box.scrollTop-=b.top+8-r.top;else if(r.bottom>b.bottom-8)box.scrollTop+=r.bottom-b.bottom+8;}
+const choice=(attr,val,fl,nm,n,on)=>`<button class="choice f${on?" on":""}" type="button" ${attr}="${esc(val)}"><span class="fl">${fl}</span><span class="nm">${esc(nm)}</span><span class="n">${n===""?"":n}</span></button>`;
+
+function countryHTML(f){
+  const q=norm(f||"");const counts={};
+  for(const g of ALL)if(baseOk(g))counts[g.country]=(counts[g.country]||0)+1;
+  const ok=c=>counts[c.code]&&(!q||norm(c.name).includes(q));
+  const all=Object.values(countries).filter(ok).sort((a,b)=>a.name.localeCompare(b.name,"es"));
+  const pop=POPULAR.map(k=>countries[k]).filter(c=>c&&ok(c));
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  return (!q?`<div class="choices">${choice("data-c","","🌎","Todo el mundo",total,!S.country)}</div>`:"")+
+    (pop.length?`<h4>Latinoamérica y populares</h4><div class="choices">${pop.map(c=>choice("data-c",c.code,c.flag,c.name,counts[c.code],S.country===c.code)).join("")}</div>`:"")+
+    `<h4>Todos los países · A–Z</h4><div class="choices">${all.map(c=>choice("data-c",c.code,c.flag,c.name,counts[c.code],S.country===c.code)).join("")||'<span class="note">Ningún país coincide.</span>'}</div>`;
+}
+function openCountry(){
+  openSheet("Elige un país",countryHTML(),e=>{const b=e.target.closest("[data-c]");if(!b)return;S.country=b.dataset.c;S.cat="";closeSheet();buildTools();refreshList();focusFirstRow();},
+    `<label class="search" for="cq"><input id="cq" class="f" type="search" placeholder="Escribe un país…" autocomplete="off"></label>`);
+  $("cq").addEventListener("input",()=>{$("sheetBody").innerHTML=countryHTML($("cq").value);});
+}
+function openCat(){
+  const base=ALL.filter(g=>baseOk(g)&&(!S.country||g.country===S.country));const n={};
+  for(const g of base)for(const c of g.cats)n[c]=(n[c]||0)+1;
+  const cats=Object.keys(n).sort((a,b)=>n[b]-n[a]);
+  openSheet("Categoría",`<div class="choices">${choice("data-k","","▦","Todas",base.length,!S.cat)}${cats.map(c=>choice("data-k",c,CAT_IC[c]||"•",CAT_ES[c]||c,n[c],S.cat===c)).join("")}</div>`,
+    e=>{const b=e.target.closest("[data-k]");if(!b)return;S.cat=b.dataset.k;closeSheet();buildTools();refreshList();focusFirstRow();});
+}
+function openLang(){
+  const n={};for(const g of ALL)if((!S.https||g.https)&&(!S.geo||!g.geo)&&(!S.country||g.country===S.country))for(const l of g.langs)n[l]=(n[l]||0)+1;
+  const ls=Object.keys(n).filter(l=>langs[l]).sort((a,b)=>n[b]-n[a]);
+  openSheet("Idioma",`<div class="choices">${choice("data-l","","🌐","Todos los idiomas","",!S.lang)}${ls.map(l=>choice("data-l",l,"🗣️",langs[l].name,n[l],S.lang===l)).join("")}</div>`,
+    e=>{const b=e.target.closest("[data-l]");if(!b)return;S.lang=b.dataset.l;closeSheet();buildTools();refreshList();focusFirstRow();});
+}
+function openAdd(){
+  openSheet("Agregar canal con enlace",`<form class="form" id="addForm">
+    <label for="aName">Nombre del canal<input id="aName" class="f" required placeholder="Ej: Canal de mi ciudad" autocomplete="off"></label>
+    <label for="aUrl">Enlace de la transmisión (.m3u8)<input id="aUrl" class="f" required type="url" placeholder="https://…/index.m3u8" autocomplete="off"></label>
+    <button class="act primary f" type="submit">＋ Guardar en Mis canales</button>
+    <p class="note">Usa solo enlaces públicos que el propio canal ofrece. Si empieza por “http://” sin la “s”, es probable que el navegador no lo deje ver.</p></form>`,null);
+  $("addForm").addEventListener("submit",e=>{e.preventDefault();
+    const name=$("aName").value.trim(),url=$("aUrl").value.trim();if(!name||!/^https?:\/\//i.test(url)){toast("Revisa el nombre y el enlace");return;}
+    mine.push({id:"custom:"+Date.now(),name,logo:"",country:"",cats:["undefined"],langs:[],sources:[{url,quality:"",labels:[]}],custom:true,https:url.startsWith("https")});
+    store.set("mine",mine);closeSheet();toast(`📌 “${name}” es tu canal ${mine.length}`);if(S.tab!=="mine")setTab("mine");else refreshList();});
+}
+function openSettings(){
+  const html=`<button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>Solo canales que se ven en el navegador<small>Oculta los enlaces “http” que el navegador bloquea.</small></span></button>
+    <button class="opt f" id="oG" type="button" aria-pressed="${S.geo}"><span class="sw"></span><span>Ocultar canales con bloqueo por país<small>Algunos canales solo se ven desde su propio país.</small></span></button>
+    <button class="opt f" id="oX" type="button"><span>⤓</span><span>Descargar la lista actual en M3U<small>Para abrirla en TiviMate, VLC u otra app de IPTV.</small></span></button>
+    ${mine.length?`<button class="opt f" id="oM" type="button"><span>⤓</span><span>Descargar Mis canales en M3U<small>${mine.length} canales guardados.</small></span></button>`:""}
+    <p class="note">Canales públicos reunidos por <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. Ultimate TV no aloja video; algunos canales pueden estar caídos o no emitir las 24 horas. Tus favoritos y Mis canales se guardan solo en este navegador.</p>`;
+  openSheet("Ajustes",html,e=>{
+    const b=e.target.closest(".opt");if(!b)return;
+    if(b.id==="oH"){S.https=!S.https;b.setAttribute("aria-pressed",S.https);save();refreshList();}
+    if(b.id==="oG"){S.geo=!S.geo;b.setAttribute("aria-pressed",S.geo);save();refreshList();}
+    if(b.id==="oX")exportM3U(view,"ultimate-tv-"+(S.tab==="explore"?(S.country||"mundo").toLowerCase():S.tab));
+    if(b.id==="oM")exportM3U(mine.map(fresh),"ultimate-tv-mis-canales");
+  });
+}
+function exportM3U(L,name){
+  if(!L.length){toast("No hay canales para descargar");return;}
+  let m="#EXTM3U\n";
+  for(const g of L){const c=countries[g.country];m+=`#EXTINF:-1 tvg-id="${esc(String(g.id).split("@")[0])}" tvg-logo="${esc(g.logo)}" group-title="${esc(c?c.name:"Mis canales")}",${g.name.replace(/[\r\n,]/g," ")}\n${g.sources[0].url}\n`;}
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([m],{type:"audio/x-mpegurl"}));a.download=name+".m3u";document.body.appendChild(a);a.click();a.remove();
+  toast(L.length+" canales descargados");
+}
+$("tools").addEventListener("click",e=>{const b=e.target.closest("[data-tool]");if(!b)return;const t=b.dataset.tool;
+  if(!ready&&t!=="add"){toast("Espera a que cargue la guía");return;}
+  if(t==="country")openCountry();if(t==="cat")openCat();if(t==="lang")openLang();if(t==="add")openAdd();});
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)setTab(b.dataset.tab);});
+$("gearBtn").onclick=openSettings;
+
+/* Voz */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function voice(){try{const r=new SR();r.lang="es-CO";r.onresult=e=>{$("q").value=e.results[0][0].transcript;refreshList();focusFirstRow();};r.onerror=()=>toast("No se pudo usar el micrófono");r.start();toast("🎤 Habla ahora…");}catch(e){toast("La búsqueda por voz no está disponible aquí");}}
+
+/* ================= Control remoto ================= */
+const DIRS={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",Up:"up",Down:"down",Left:"left",Right:"right"};
+function scope(){if(!$("sheet").hidden)return $("sheet");if(isFull())return $("osd");return document;}
+function shownEl(el){if(el.closest("[hidden]"))return false;const r=el.getBoundingClientRect();if(!r.width||!r.height)return false;
+  if(el.classList.contains("row")){const b=listEl.getBoundingClientRect();return r.bottom>b.top+4&&r.top<b.bottom-4;}
+  const sb=$("sheetBody");if(sb.contains(el)){const b=sb.getBoundingClientRect();return r.bottom>b.top&&r.top<b.bottom;}
+  return true;}
+function geo(dir,from,cands){
+  const r=from.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bd=Infinity;
+  // izquierda/derecha: primero lo que está en la misma franja horizontal
+  if(dir==="left"||dir==="right"){const same=cands.filter(c=>{const q=c.getBoundingClientRect();return q.bottom>r.top+4&&q.top<r.bottom-4;});
+    const pick=same.filter(c=>{const q=c.getBoundingClientRect();return dir==="right"?q.left>=r.right-2:q.right<=r.left+2;});if(pick.length)cands=pick;else if(same.length)return null;}
+  for(const c of cands){if(c===from)continue;const q=c.getBoundingClientRect(),qx=q.left+q.width/2,qy=q.top+q.height/2;let m,x;
+    if(dir==="right"){if(q.left<r.right-2)continue;m=q.left-r.right;x=Math.abs(qy-cy);}
+    else if(dir==="left"){if(q.right>r.left+2)continue;m=r.left-q.right;x=Math.abs(qy-cy);}
+    else if(dir==="down"){if(q.top<r.bottom-2)continue;m=q.top-r.bottom;x=Math.abs(qx-cx);}
+    else{if(q.bottom>r.top+2)continue;m=r.top-q.bottom;x=Math.abs(qx-cx);}
+    const d=m+x*(dir==="left"||dir==="right"?2.5:0.8);if(d<bd){bd=d;best=c;}}
+  return best;
+}
+function nav(dir){
+  const sc=scope(),a=document.activeElement;
+  const inSc=a&&a!==document.body&&sc.contains(a)&&a.classList.contains("f");
+  if(!inSc){const f=(sc===document?(listEl.querySelector(".row.playing")||lastRow||listEl.querySelector(".row")):null)||sc.querySelector(".choice.on")||[...sc.querySelectorAll(".f")].find(shownEl);if(f){if(f.classList.contains("row"))focusRow(f);else f.focus({preventScroll:true});}return;}
+  // Dentro de la lista: arriba/abajo de fila en fila
+  if(a.classList.contains("row")){
+    const i=+a.dataset.i;
+    if(dir==="down"){const n=rowAt(i+1);if(n)focusRow(n);return;}
+    if(dir==="up"){if(i>0){focusRow(rowAt(i-1));return;}const t=[...$("tools").querySelectorAll(".f")].pop()||document.querySelector(".tab.on");if(t)t.focus({preventScroll:true});return;}
+    if(dir==="right"){lastRow=a;const b=$("now").hidden?null:$("now").querySelector(".act:not([hidden])");if(b)b.focus({preventScroll:true});else toast("Oprime OK para ver el canal");return;}
+    return;
+  }
+  const cands=[...sc.querySelectorAll(".f")].filter(shownEl);
+  let t=geo(dir,a,cands);
+  // Desde la pantalla hacia la izquierda: volver a la fila donde estabas
+  if(dir==="left"&&$("now").contains(a)&&(!t||t.classList.contains("row"))&&a===$("now").querySelector(".act:not([hidden])")){const r=(lastRow&&document.contains(lastRow))?lastRow:listEl.querySelector(".row");if(r){focusRow(r);return;}}
+  if(dir==="down"&&!t&&($("tools").contains(a)||a.classList.contains("tab"))){const r=listEl.querySelector(".row");if(r){focusRow(r);return;}}
+  if(t){if(t.classList.contains("row"))focusRow(t);else{t.focus({preventScroll:true});if($("sheetBody").contains(t))keepIn($("sheetBody"),t);}}
+}
+function back(){
+  if(closeSheet())return true;
+  if(isFull()){if(!$("osd").classList.contains("hide")&&$("osd").contains(document.activeElement)){hideOSD();return true;}exitFull();return true;}
+  const a=document.activeElement;
+  if(a&&$("now").contains(a)){const r=(lastRow&&document.contains(lastRow))?lastRow:listEl.querySelector(".row");if(r){focusRow(r);return true;}}
+  if(S.tab==="search"&&$("q")&&$("q").value){$("q").value="";refreshList();$("q").focus();return true;}
+  return false;
+}
+document.addEventListener("keydown",e=>{
+  const a=document.activeElement,typing=a&&(a.tagName==="INPUT"),dir=DIRS[e.key];
+  if(e.key==="Escape"||e.key==="GoBack"||e.key==="BrowserBack"||(e.key==="Backspace"&&!typing)){if(back())e.preventDefault();return;}
+  if(/^[0-9]$/.test(e.key)&&!typing&&$("sheet").hidden){e.preventDefault();zapDigit(e.key);return;}
+  if(e.key==="ChannelUp"||e.key==="PageUp"){if(current()){e.preventDefault();tune(ctx.i-1);if(isFull())showOSD();}return;}
+  if(e.key==="ChannelDown"||e.key==="PageDown"){if(current()){e.preventDefault();tune(ctx.i+1);if(isFull())showOSD();}return;}
+  if(isFull()){
+    const onBtn=$("osd").contains(a)&&a!==document.body;
+    if(dir==="up"){e.preventDefault();tune(ctx.i-1);showOSD();return;}
+    if(dir==="down"){e.preventDefault();tune(ctx.i+1);showOSD();return;}
+    if(!onBtn&&(dir||e.key==="Enter"||e.key===" ")){e.preventDefault();showOSD(true);if(V.paused&&V.src)V.play().catch(()=>{});return;}
+    if(onBtn)showOSD();
+  }
+  if(dir){
+    if(typing&&(dir==="left"||dir==="right")){const at=a.selectionStart,len=a.value.length;if(at==null||(dir==="left"&&at>0)||(dir==="right"&&at<len))return;}
+    e.preventDefault();nav(dir);
+  }
+});
+window.addEventListener("popstate",()=>{if(!$("sheet").hidden){closeSheet(true);return;}if(isFull())exitFull(true);});
+
+/* Reloj */
+function tick(){const d=new Date();$("clock").textContent=d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});}
+tick();setInterval(tick,15000);
+
+/* Arranque */
+setTab(S.tab,true);
+load().catch(err=>{console.error(err);listEl.innerHTML=`<div class="state"><div class="big">📡</div><strong>No se pudo cargar la guía de canales</strong><span>Revisa la conexión a internet y vuelve a intentarlo.</span><button class="act primary f" type="button" onclick="location.reload()">Reintentar</button></div>`;
+  if(mine.length||favs.length){ready=true;if(S.tab==="explore"||S.tab==="search")setTab(mine.length?"mine":"fav",true);}});
+})();
+</script>
+</body>
+</html>

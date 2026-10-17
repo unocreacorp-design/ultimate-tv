@@ -1,9 +1,6 @@
-// Revisa todos los canales de Ultimate TV y guarda en status.json los que transmiten ahora y son seguros.
-// Lo ejecuta GitHub Actions cada 4 horas. Un canal se aprueba solo si:
-//  - su lista .m3u8 responde por https con un certificado válido (Node rechaza certificados malos),
-//  - no redirige a una dirección sin cifrar,
-//  - permite reproducirse desde la página (cabecera CORS),
-//  - y el siguiente archivo del video (variante o segmento) también responde por https.
+// Revisa todos los canales de Ultimate TV y guarda en status.json los que transmiten ahora.
+// Lo ejecuta GitHub Actions cada 4 horas. Un canal cuenta como "con señal" si su lista .m3u8
+// responde y permite reproducirse desde la página (cabecera CORS).
 // También revisa los logos: solo se aprueban los que cargan por https con certificado válido y son imágenes.
 import fs from "node:fs";
 
@@ -31,16 +28,9 @@ async function head(url, n = 1024) {
 const corsOk = (a) => a === "*" || a.includes(ORIGIN);
 
 async function checkStream(url) {
-  if (!url.startsWith("https://")) return false;
-  const r = await head(url, 4096);
-  if (!r || !r.ok || !r.finalUrl.startsWith("https://") || !corsOk(r.acao) || !r.txt.includes("#EXTM3U")) return false;
-  // Siguiente archivo del video: debe ser https y responder
-  const next = r.txt.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#"));
-  if (!next) return true;
-  let nextUrl; try { nextUrl = new URL(next, r.finalUrl).href; } catch { return false; }
-  if (!nextUrl.startsWith("https://")) return false;
-  const n = await head(nextUrl, 64);
-  return !!(n && n.ok && n.finalUrl.startsWith("https://") && corsOk(n.acao));
+  // Igual que la primera versión: el enlace responde, es una lista de video y deja reproducirse desde la página
+  const r = await head(url, 1024);
+  return !!(r && r.ok && corsOk(r.acao) && r.txt.includes("#EXTM3U"));
 }
 async function checkLogo(url) {
   if (!url.startsWith("https://")) return false;

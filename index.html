@@ -277,7 +277,8 @@ const dn=(d,c,fb)=>{try{const n=d&&d.of(c);return n&&n!==c?n:fb;}catch(e){return
 function toast(t){const n=$("toast");n.textContent=t;n.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>n.hidden=true,2300);}
 
 /* ================= Estado ================= */
-const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:true,geo:true},store.get("state",{}));
+const IN_APP=/UltimateTVApp/.test(navigator.userAgent); // dentro de la app de Android TV
+const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,geo:true},store.get("state",{}));
 let favs=store.get("favs",[]);      // [{snapshot}]
 let mine=store.get("mine",[]);      // [{snapshot}] — lista propia, con número de canal
 let ALL=[],byId=new Map(),countries={},langs={},ready=false;
@@ -470,7 +471,7 @@ function tune(i,keepSrc){
   const s=g.sources[src];
   stop();
   $("idle").hidden=false;$("liveTag").hidden=true;
-  if(location.protocol==="https:"&&s.url.startsWith("http:")){idle("Este canal solo abre en apps de TV","Su enlace no es seguro y el navegador lo bloquea. En Ajustes puedes descargar la lista M3U para TiviMate o VLC.");return;}
+  if(!IN_APP&&location.protocol==="https:"&&s.url.startsWith("http:")){idle("Este canal solo abre en apps de TV","Su enlace no es seguro y el navegador lo bloquea. En Ajustes puedes descargar la lista M3U para TiviMate o VLC.");return;}
   idle("Sintonizando…",g.name,true);
   const fail=()=>{if(playingId!==g.id)return;if(src<g.sources.length-1){src++;tune(i,true);}else idle("Sin señal en este momento","Este canal no está transmitiendo o no deja verse en el navegador. Prueba con el siguiente.");};
   const ok=()=>{if(playingId===g.id){$("idle").hidden=true;$("liveTag").hidden=false;}};
@@ -527,13 +528,13 @@ const isFull=()=>document.body.classList.contains("full");
 function enterFull(){
   if(!current())return;
   document.body.classList.add("full");history.pushState({full:1},"");
-  try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);}catch(e){}
+  if(!IN_APP){try{const el=document.documentElement;const p=(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);if(p&&p.catch)p.catch(()=>{});}catch(e){}}
   showOSD();
 }
 function exitFull(fromPop){
   if(!isFull())return false;
   document.body.classList.remove("full");hideOSD();
-  try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}
+  try{if(document.fullscreenElement){const p=document.exitFullscreen();if(p&&p.catch)p.catch(()=>{});}}catch(e){}
   if(!fromPop)history.back();
   const r=listEl.querySelector(".row.playing")||lastRow;if(r)focusRow(r);
   return true;
@@ -612,10 +613,10 @@ function openAdd(){
     store.set("mine",mine);closeSheet();toast(`📌 “${name}” es tu canal ${mine.length}`);if(S.tab!=="mine")setTab("mine");else refreshList();});
 }
 function openSettings(){
-  const html=`<button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>Solo canales que se ven en el navegador<small>Oculta los enlaces “http” que el navegador bloquea.</small></span></button>
+  const html=`<button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>${IN_APP?"Solo enlaces seguros (https)":"Solo canales que se ven en el navegador"}<small>${IN_APP?"En la app puedes ver también los canales http. Actívalo solo si prefieres menos canales.":"Oculta los enlaces “http” que el navegador bloquea."}</small></span></button>
     <button class="opt f" id="oG" type="button" aria-pressed="${S.geo}"><span class="sw"></span><span>Ocultar canales con bloqueo por país<small>Algunos canales solo se ven desde su propio país.</small></span></button>
-    <button class="opt f" id="oX" type="button"><span>⤓</span><span>Descargar la lista actual en M3U<small>Para abrirla en TiviMate, VLC u otra app de IPTV.</small></span></button>
-    ${mine.length?`<button class="opt f" id="oM" type="button"><span>⤓</span><span>Descargar Mis canales en M3U<small>${mine.length} canales guardados.</small></span></button>`:""}
+    ${IN_APP?"":`<button class="opt f" id="oX" type="button"><span>⤓</span><span>Descargar la lista actual en M3U<small>Para abrirla en TiviMate, VLC u otra app de IPTV.</small></span></button>`}
+    ${mine.length&&!IN_APP?`<button class="opt f" id="oM" type="button"><span>⤓</span><span>Descargar Mis canales en M3U<small>${mine.length} canales guardados.</small></span></button>`:""}
     <p class="note">Canales públicos reunidos por <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. Ultimate TV no aloja video; algunos canales pueden estar caídos o no emitir las 24 horas. Tus favoritos y Mis canales se guardan solo en este navegador.</p>`;
   openSheet("Ajustes",html,e=>{
     const b=e.target.closest(".opt");if(!b)return;
@@ -707,6 +708,8 @@ document.addEventListener("keydown",e=>{
     e.preventDefault();nav(dir);
   }
 });
+window.utvBack=()=>back();
+window.utvChannel=d=>{if(current()){tune(ctx.i+d);if(isFull())showOSD();}};
 window.addEventListener("popstate",()=>{if(!$("sheet").hidden){closeSheet(true);return;}if(isFull())exitFull(true);});
 
 /* Reloj */

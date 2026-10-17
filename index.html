@@ -6,6 +6,11 @@
 <title>Ultimate TV</title>
 <meta name="description" content="Canales de TV gratuitos de todo el mundo, hechos para usarse con el control remoto.">
 <meta name="theme-color" content="#070b11">
+<meta name="referrer" content="no-referrer">
+<script>
+/* Escudo de seguridad (solo en navegador): nada de ventanas, formularios, marcos ni contenido sin cifrar */
+if(!/UltimateTVApp/.test(navigator.userAgent))document.write('<meta http-equiv="Content-Security-Policy" content="default-src \'self\' https:; script-src \'self\' \'unsafe-inline\' https://cdnjs.cloudflare.com; worker-src blob:; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: blob:; connect-src https:; frame-src \'none\'; object-src \'none\'; base-uri \'self\'; form-action \'none\'; block-all-mixed-content">');
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
@@ -323,7 +328,9 @@ const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,g
    Un canal caído se oculta; a las 6 horas se vuelve a revisar y, si regresó, aparece otra vez. */
 const TTL=6*3600e3;
 let health=store.get("health",{}),SERVER=null,SERVER_AT="";
-function hState(u){const h=health[u];if(h&&Date.now()-h[1]<TTL)return h[0];if(SERVER)return SERVER.has(u)?1:0;return -1;}
+// En el navegador (SAFE) solo se usan enlaces aprobados por la revisión de GitHub: certificado válido, https y servidor de video seguro
+const SAFE=!IN_APP;let LOGOS=null;
+function hState(u){if(SAFE&&SERVER&&!SERVER.has(u))return 0;const h=health[u];if(h&&Date.now()-h[1]<TTL)return h[0];if(SERVER)return SERVER.has(u)?1:0;return -1;}
 const alive=g=>g.custom||g.sources.some(x=>hState(x.url)!==0);
 let hT;function setHealth(u,ok){health[u]=[ok?1:0,Date.now()];clearTimeout(hT);hT=setTimeout(()=>{const now=Date.now();for(const k in health)if(now-health[k][1]>TTL*2)delete health[k];store.set("health",health);},1500);}
 let favs=store.get("favs",[]);      // [{snapshot}]
@@ -395,7 +402,7 @@ async function load(){
     }
   }catch(e){console.warn("Free-TV no disponible",e);}
   // Estado de los enlaces revisado en GitHub (si existe)
-  try{const st=await fetch(STATUS_URL+"?t="+Math.floor(Date.now()/600000)).then(r=>r.ok?r.json():null);if(st&&Array.isArray(st.ok)){SERVER=new Set(st.ok);SERVER_AT=st.updated||"";}}catch(e){}
+  try{const st=await fetch(STATUS_URL+"?t="+Math.floor(Date.now()/600000)).then(r=>r.ok?r.json():null);if(st&&Array.isArray(st.ok)){SERVER=new Set(st.ok);SERVER_AT=st.updated||"";if(Array.isArray(st.logos))LOGOS=new Set(st.logos);}}catch(e){}
   ALL=[...groups.values()];
   for(const g of ALL){
     if(g.cats.includes("animation")&&!g.cats.includes("kids"))g.cats=["kids",...g.cats];
@@ -496,7 +503,7 @@ function updateCounts(){$("cFav").textContent=favs.length;$("cMine").textContent
 
 /* ================= Revisor de canales ================= */
 const queue=[],queued=new Set();let running=0,checked=0;
-function canTry(u){return IN_APP||location.protocol!=="https:"||u.startsWith("https:");}
+function canTry(u){if(SAFE)return !!(SERVER&&SERVER.has(u));return IN_APP||location.protocol!=="https:"||u.startsWith("https:");}
 function enqueue(list,max){let n=0;for(const g of list){if(max&&n++>=max)break;if(g.custom)continue;
   for(const x of g.sources){const u=x.url,h=health[u];if(queued.has(u)||!canTry(u)||(h&&Date.now()-h[1]<TTL))continue;queued.add(u);queue.push(u);}}
   pump();}
@@ -520,7 +527,8 @@ function startChecker(){
 
 /* ================= Lista ================= */
 function initials(n){return esc((String(n).replace(/[^\p{L}\p{N} ]/gu,"").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("")||"TV").toUpperCase());}
-function logoHTML(g){return g.logo?`<img src="${esc(g.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-ph="${initials(g.name)}">`:`<span class="ph">${initials(g.name)}</span>`;}
+function logoOk(u){if(!u)return false;if(!SAFE)return true;if(!u.startsWith("https:"))return false;return LOGOS?LOGOS.has(u):true;}
+function logoHTML(g){return logoOk(g.logo)?`<img src="${esc(g.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-ph="${initials(g.name)}">`:`<span class="ph">${initials(g.name)}</span>`;}
 function rowHTML(g,i){
   const c=countries[g.country],q=g.sources[0]&&g.sources[0].quality;
   const sub=[c?c.flag+esc(c.name):(g.custom?"🔗 Enlace propio":""),esc(CAT_ES[g.cats[0]]||g.cats[0]||""),q?esc(q):""].filter(Boolean).join(" · ")+(!g.https&&!g.custom?' · <span class="w">solo app</span>':"");
@@ -572,6 +580,7 @@ function tune(i,keepSrc){
   const s=g.sources[src];
   stop();
   $("idle").hidden=false;$("liveTag").hidden=true;
+  if(SAFE&&SERVER&&!g.custom&&!SERVER.has(s.url)){if(src<g.sources.length-1){src++;tune(i,true);return;}idle("Canal bloqueado por seguridad","Este canal no pasó la revisión de seguridad (su conexión no es segura o no responde). Prueba con otro.");return;}
   if(!IN_APP&&location.protocol==="https:"&&s.url.startsWith("http:")){idle("Este canal solo abre en apps de TV","Su enlace no es seguro y el navegador lo bloquea. En Ajustes puedes descargar la lista M3U para TiviMate o VLC.");return;}
   idle("Sintonizando…",g.name,true);
   const fail=()=>{if(playingId!==g.id)return;setHealth(s.url,0);if(src<g.sources.length-1){src++;tune(i,true);}else idle("Sin señal en este momento","Este canal no está transmitiendo o no deja verse en el navegador. Prueba con el siguiente.");};

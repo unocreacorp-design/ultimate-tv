@@ -145,7 +145,9 @@ body.full .osd{display:flex}
 .choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(12.5rem,1fr));gap:.5rem;margin-bottom:1.1rem}
 .choice{display:flex;align-items:center;gap:.65rem;padding:.7rem .85rem;border-radius:12px;border:1px solid var(--line);background:var(--row);text-align:left;min-width:0}
 .choice:hover{background:var(--row-hi)}
-.choice .fl{font-size:1.25rem;line-height:1;flex-shrink:0}
+.choice .fl{font-size:1.25rem;line-height:1;flex-shrink:0;display:flex}
+.flg{width:1.25em;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:2px;vertical-align:-.12em;margin-right:.35em;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.choice .flg{width:1.6rem;margin:0}
 .choice .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .choice .n{font:500 .7rem var(--mono);color:var(--muted)}
 .choice.on{border-color:var(--accent);color:var(--accent-2)}
@@ -300,7 +302,7 @@ async function load(){
   for(const f of feeds){feedMap.set(f.channel+"@"+f.id,f);if(f.is_main)mainFeed.set(f.channel,f);}
   const logoMap=new Map();
   for(const l of logos){const c=logoMap.get(l.channel);if(!c||(!l.feed&&c.feed)||(l.in_use&&!c.in_use))logoMap.set(l.channel,l);}
-  for(const c of ctry)countries[c.code]={code:c.code,name:dn(regionDN,c.code==="UK"?"GB":c.code,c.name),flag:c.flag||"🏳️",n:0};
+  for(const c of ctry){const iso=(c.code==="UK"?"GB":c.code);countries[c.code]={code:c.code,name:dn(regionDN,iso,c.name),flag:`<img class="flg" src="https://flagcdn.com/w40/${iso.toLowerCase()}.png" alt="" loading="lazy">`,n:0};}
   for(const l of languages){const two=LANG2[l.code];const n=two?dn(langDN,two,null):null;langs[l.code]={code:l.code,name:n?n[0].toUpperCase()+n.slice(1):l.name,n:0};}
   const groups=new Map();
   for(const s of streams){
@@ -370,7 +372,7 @@ function setTab(t,first){
 function buildTools(){
   const T=$("tools"),c=countries[S.country];
   if(S.tab==="explore"){
-    T.innerHTML=`<button class="chip f" data-tool="country" type="button"><span class="k">País</span><span class="v">${c?c.flag+" "+esc(c.name):"🌎 Todo el mundo"}</span> ▾</button>
+    T.innerHTML=`<button class="chip f" data-tool="country" type="button"><span class="k">País</span><span class="v">${c?c.flag+esc(c.name):"🌎 Todo el mundo"}</span> ▾</button>
       <button class="chip f" data-tool="cat" type="button"><span class="k">Categoría</span><span class="v">${S.cat?(CAT_IC[S.cat]||"")+" "+esc(CAT_ES[S.cat]||S.cat):"Todas"}</span> ▾</button>
       <button class="chip f" data-tool="lang" type="button"><span class="k">Idioma</span><span class="v">${S.lang&&langs[S.lang]?esc(langs[S.lang].name):"Todos"}</span> ▾</button>`;
   }else if(S.tab==="search"){
@@ -389,10 +391,10 @@ function buildTools(){
 function refreshList(){
   updateCounts();
   if(!ready)return;
-  let title="",empty="";
+  let title="",empty="",tf="";
   if(S.tab==="explore"){
     view=exploreList();const c=countries[S.country];
-    title=(S.cat?(CAT_ES[S.cat]||S.cat)+" · ":"")+(c?c.flag+" "+c.name:"🌎 Todo el mundo");
+    title=(S.cat?(CAT_ES[S.cat]||S.cat)+" · ":"")+(c?c.name:"🌎 Todo el mundo");tf=c?c.flag:"";
     empty=`<div class="state"><div class="big">📡</div><strong>No hay canales con estos filtros</strong><span>Prueba otra categoría, otro idioma o “Todo el mundo”.</span></div>`;
   }else if(S.tab==="search"){
     const q=$("q")?$("q").value.trim():"";
@@ -407,7 +409,7 @@ function refreshList(){
     view=mine.map(fresh);title="📺 Mis canales";
     empty=`<div class="state"><div class="big">📺</div><strong>Arma tu propia lista</strong><span>Cuando un canal te guste, oprime ▶ y elige “＋ Mis canales”. Tendrán su propio número para cambiarlos con el control. También puedes agregar uno con su enlace.</span></div>`;
   }
-  $("listTitle").textContent=title;
+  $("listTitle").innerHTML=tf+esc(title);
   $("listCount").textContent=view.length?view.length.toLocaleString("es")+(view.length===1?" canal":" canales"):"";
   listEl.scrollTop=0;listEl.innerHTML="";shown=0;lastRow=null;
   if(!view.length)listEl.innerHTML=empty;else renderMore();
@@ -419,7 +421,7 @@ function initials(n){return esc((String(n).replace(/[^\p{L}\p{N} ]/gu,"").split(
 function logoHTML(g){return g.logo?`<img src="${esc(g.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-ph="${initials(g.name)}">`:`<span class="ph">${initials(g.name)}</span>`;}
 function rowHTML(g,i){
   const c=countries[g.country],q=g.sources[0]&&g.sources[0].quality;
-  const sub=[c?c.flag+" "+esc(c.name):(g.custom?"🔗 Enlace propio":""),esc(CAT_ES[g.cats[0]]||g.cats[0]||""),q?esc(q):""].filter(Boolean).join(" · ")+(!g.https&&!g.custom?' · <span class="w">solo app</span>':"");
+  const sub=[c?c.flag+esc(c.name):(g.custom?"🔗 Enlace propio":""),esc(CAT_ES[g.cats[0]]||g.cats[0]||""),q?esc(q):""].filter(Boolean).join(" · ")+(!g.https&&!g.custom?' · <span class="w">solo app</span>':"");
   const playing=g.id===playingId;
   return `<button class="row f${playing?" playing":""}" type="button" data-i="${i}" role="listitem">
     <span class="num">${playing?'<span class="eq"><i></i><i></i><i></i></span>':i+1}</span>
@@ -484,7 +486,7 @@ function stop(){if(hls){hls.destroy();hls=null;}V.onerror=null;V.onplaying=null;
 function idle(t,s,spin){$("idle").innerHTML=(spin?'<div class="spin"></div>':"")+`<strong>${esc(t)}</strong><span>${esc(s)}</span>`;$("idle").hidden=false;}
 function paintNow(g){
   const c=countries[g.country],L=ctx.list;
-  const meta=[c?c.flag+" "+c.name:(g.custom?"🔗 Enlace propio":""),(g.cats||[]).map(x=>CAT_ES[x]||x).join(", "),g.sources.length>1?`fuente ${src+1} de ${g.sources.length}`:""].filter(Boolean).join("  ·  ");
+  const meta=[c?c.name:(g.custom?"🔗 Enlace propio":""),(g.cats||[]).map(x=>CAT_ES[x]||x).join(", "),g.sources.length>1?`fuente ${src+1} de ${g.sources.length}`:""].filter(Boolean).join("  ·  ");
   $("now").hidden=false;
   $("nLogo").innerHTML=logoHTML(g);$("nName").textContent=g.name;$("nMeta").textContent=meta;
   $("oLogo").innerHTML=logoHTML(g);$("oName").textContent=g.name;$("oMeta").textContent=meta;

@@ -142,7 +142,22 @@ body.full .osd{display:flex}
 /* Menú flotante de canales (pantalla completa) */
 .fmenu{position:absolute;top:0;bottom:0;left:0;z-index:2;width:min(30rem,44%);display:none;flex-direction:column;gap:.6rem;
   padding:max(1.2rem, env(safe-area-inset-top,0px)) 1rem max(1rem, env(safe-area-inset-bottom,0px)) max(1.2rem, env(safe-area-inset-left,0px));
-  background:linear-gradient(90deg,rgba(6,10,16,.96),rgba(6,10,16,.88));backdrop-filter:blur(10px);border-right:1px solid var(--line);box-shadow:1.5rem 0 3rem rgba(0,0,0,.5)}
+  background:linear-gradient(90deg,rgba(6,10,16,.80) 0%,rgba(6,10,16,.62) 70%,rgba(6,10,16,.40) 100%);backdrop-filter:blur(8px);border-right:1px solid rgba(255,255,255,.08)}
+.fmenu .row{background:rgba(17,26,37,.55)}
+.fmenu .row:hover,.fmenu .row:focus-visible{background:rgba(32,46,64,.85)}
+.fnow{font:500 .78rem var(--mono);color:var(--accent-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fsearch{display:flex;align-items:center;gap:.5rem;padding:0 .8rem;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);min-height:2.7rem}
+.fsearch:focus-within{border-color:var(--accent);box-shadow:0 0 1rem rgba(255,138,61,.3)}
+.fsearch input{flex:1;min-width:0;border:0;background:none;padding:.55rem 0;font-size:1rem;color:#fff}
+.fsearch input:focus{outline:none}
+.fedge,.fback{position:absolute;z-index:1;display:none;align-items:center;gap:.45rem;border:1px solid rgba(255,255,255,.18);background:rgba(6,10,16,.6);backdrop-filter:blur(8px);color:#fff;font-weight:700;font-size:.9rem;transition:opacity .25s}
+.fedge{left:0;top:50%;transform:translateY(-50%);padding:1rem .55rem;border-radius:0 12px 12px 0;border-left:0;writing-mode:vertical-rl}
+.fback{top:max(1rem, env(safe-area-inset-top,0px));left:max(1rem, env(safe-area-inset-left,0px));padding:.55rem .95rem;border-radius:999px}
+.fback+.fback{left:auto;right:max(1rem, env(safe-area-inset-right,0px))}
+body.full .fedge,body.full .fback{display:flex}
+body.full.nocur .fedge,body.full.nocur .fback,body.full .fmenu.open~.fedge{opacity:0;pointer-events:none}
+body.full.nocur,body.full.nocur *{cursor:none!important}
+.m-tv .fedge,.m-tv .fback{display:none!important}
 body.full .fmenu.open{display:flex}
 .fhead{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
 .fhead b{font:700 1.15rem var(--display)}
@@ -164,6 +179,35 @@ body.full .fmenu.open{display:flex}
 .chip.kids{border-color:rgba(255,201,77,.5);color:var(--gold)}
 .chip.kids.on{background:var(--gold);color:#241a00;border-color:var(--gold)}
 .checking{font:500 .72rem var(--mono);color:var(--muted);margin-left:auto;flex-shrink:0}
+
+/* Selector de modo y de diseño */
+.views{display:flex;gap:.25rem;padding:.25rem;border-radius:999px;background:var(--glass);border:1px solid var(--line);flex-shrink:0}
+.vbtn{display:flex;align-items:center;gap:.35rem;padding:.42rem .75rem;border-radius:999px;border:0;background:none;color:var(--muted);font-weight:700;font-size:.82rem;white-space:nowrap}
+.vbtn:hover{color:var(--fg)}
+.vbtn.on{background:rgba(255,255,255,.12);color:var(--fg)}
+.vbtn svg{flex-shrink:0}
+.modebtn{display:flex;align-items:center;gap:.4rem;padding:.5rem .85rem;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-weight:700;font-size:.85rem;white-space:nowrap;flex-shrink:0}
+.m-tv .views{display:none}
+
+/* Panel derecho de búsqueda (diseño Panel, estilo Twitch) */
+.spanel{display:none;flex-direction:column;gap:.6rem;min-height:0;min-width:0}
+.spanel .search{flex:0 0 auto}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem}
+.shead b{font:700 1.15rem var(--display)}
+.shead span{font:500 .75rem var(--mono);color:var(--muted)}
+.qchips{display:flex;flex-wrap:wrap;gap:.35rem}
+.qchip{padding:.35rem .7rem;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:.8rem;font-weight:700;color:var(--muted)}
+.qchip:hover,.qchip.on{color:var(--fg);border-color:var(--accent)}
+.slist{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent;display:flex;flex-direction:column;gap:.3rem;padding:.3rem}
+.slist .row{grid-template-columns:3rem minmax(0,1fr) auto;padding:.35rem .6rem .35rem .4rem}
+.slist .row .num{display:none}
+.slist .lg{width:3rem;height:2.1rem}
+.sempty{color:var(--muted);text-align:center;padding:1.6rem .4rem;font-size:.9rem;line-height:1.5}
+
+/* Modo TV: todo más grande y sin mouse */
+html.m-tv{font-size:clamp(16px,1.12vw,27px)}
+.m-tv .fmenu{width:min(36rem,46%)}
+.m-tv .fmenu .tx b{font-size:1.08rem}
 
 /* Ventanas emergentes */
 .sheet{position:fixed;inset:0;z-index:40;background:rgba(3,6,10,.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
@@ -217,6 +261,27 @@ body.full .fmenu.open{display:flex}
   .side{grid-row:3}
   .row:focus-visible{transform:none}
 }
+/* Diseños de computador (solo en pantallas anchas) */
+@media (min-width:821px){
+  .l-theater .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:.9rem}
+  .l-theater .stage{grid-row:2;flex-direction:row;align-items:stretch;gap:1rem}
+  .l-theater .screen{height:56vh;width:auto;max-height:none;max-width:72%;flex-shrink:0}
+  .l-theater .now{flex:1;min-width:0;justify-content:center}
+  .l-theater .now .acts{flex-direction:column;align-items:stretch}
+  .l-theater .help{display:none}
+  .l-theater .side{grid-row:3}
+  .l-theater .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));align-content:start}
+  .l-theater .row:focus-visible{transform:none}
+}
+@media (min-width:821px) and (max-width:1199px){.l-twitch .views .vbtn[data-l="twitch"]{display:none}}
+@media (min-width:1200px){
+  .l-twitch .app{grid-template-columns:minmax(16rem,23%) minmax(0,1fr) minmax(16rem,23%);gap:0 1.1rem}
+  .l-twitch .spanel{display:flex}
+  .l-twitch .tools .chip .k{display:none}
+  .l-twitch .tab .c{display:none}
+}
+body.full .screen{height:auto!important;width:auto!important;max-width:none!important;margin:0}
+@media (max-width:820px){.views{display:none}.modebtn{padding:.45rem .7rem}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -230,6 +295,12 @@ body.full .fmenu.open{display:flex}
       <button class="tab f" data-tab="explore" type="button">🌎 Explorar</button>
       <button class="tab f" data-tab="search" type="button">🔍 Buscar</button>
     </nav>
+    <div class="views" id="views" role="group" aria-label="Diseño">
+      <button class="vbtn f" data-l="classic" type="button" title="Lista a la izquierda, video a la derecha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>Clásico</button>
+      <button class="vbtn f" data-l="theater" type="button" title="Video grande arriba y canales abajo, como YouTube"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18"/></svg>Cine</button>
+      <button class="vbtn f" data-l="twitch" type="button" title="Canales a un lado y buscador al otro, como Twitch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16"/></svg>Panel</button>
+    </div>
+    <button class="modebtn f" id="modeBtn" type="button" title="Cambiar entre versión PC y versión TV">🖥 PC</button>
     <div class="clock" id="clock"></div>
     <button class="gear f" id="gearBtn" type="button" aria-label="Ajustes">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -263,14 +334,20 @@ body.full .fmenu.open{display:flex}
       </div>
       <aside class="fmenu" id="fmenu" aria-label="Lista de canales">
         <div class="fhead"><b>Canales</b><span id="fcount"></span></div>
+        <div class="fnow" id="fnow"></div>
+        <label class="fsearch" for="fq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="fq" type="search" placeholder="Buscar en esta lista…" autocomplete="off" enterkeyhint="search"></label>
         <div class="ftabs">
-          <button class="ftab mine" data-ft="mine" type="button" tabindex="-1">📺 Mis canales</button>
+          <button class="ftab mine" data-ft="mine" type="button" tabindex="-1">📺 Míos</button>
           <button class="ftab" data-ft="fav" type="button" tabindex="-1">★ Favoritos</button>
           <button class="ftab" data-ft="ctx" type="button" tabindex="-1">▦ Lista</button>
+          <button class="ftab" data-ft="all" type="button" tabindex="-1">🌎 Todo</button>
         </div>
         <div class="flist" id="flist"></div>
-        <div class="fhint"><span><kbd>▲▼</kbd>elegir</span><span><kbd>OK</kbd>ver</span><span><kbd>◀ ▶</kbd>cambiar lista</span><span><kbd>Atrás</kbd>cerrar</span></div>
+        <div class="fhint"><span><kbd>▲▼</kbd>elegir</span><span><kbd>OK</kbd>ver</span><span><kbd>◀ ▶</kbd>cambiar lista</span><span><kbd>▲</kbd> arriba del todo: buscar</span><span><kbd>Atrás</kbd>cerrar</span></div>
       </aside>
+      <button class="fback" id="fBack" type="button" tabindex="-1">← Volver a la lista</button>
+      <button class="fback" id="fFind" type="button" tabindex="-1">🔍 Buscar canal</button>
+      <button class="fedge" id="fEdge" type="button" tabindex="-1">☰ Canales</button>
     </div>
     <div class="now" id="now" hidden>
       <div class="nowtop"><div class="lg" id="nLogo"></div><div style="min-width:0"><h3 id="nName"></h3><div class="meta" id="nMeta"></div></div></div>
@@ -283,6 +360,20 @@ body.full .fmenu.open{display:flex}
     </div>
     <div class="help" id="help"><span><kbd>▲ ▼</kbd>moverse</span><span><kbd>OK</kbd>ver · OK otra vez: pantalla completa</span><span><kbd>▶</kbd>guardar en Mis canales</span><span><kbd>Atrás</kbd>volver</span></div>
   </section>
+
+  <aside class="spanel" id="spanel" aria-label="Buscar canales">
+    <div class="shead"><b>🔍 Buscar</b><span id="scount"></span></div>
+    <label class="search" for="sq"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="sq" class="f" type="search" placeholder="Canal, país o tema…" autocomplete="off" enterkeyhint="search"></label>
+    <div class="qchips" id="qchips">
+      <button class="qchip f" data-q="dibujitos" type="button">🧸 Dibujitos</button>
+      <button class="qchip f" data-q="noticias" type="button">📰 Noticias</button>
+      <button class="qchip f" data-q="deportes" type="button">⚽ Deportes</button>
+      <button class="qchip f" data-q="peliculas" type="button">🎬 Películas</button>
+      <button class="qchip f" data-q="musica" type="button">🎵 Música</button>
+      <button class="qchip f" data-q="documentales" type="button">🌍 Documentales</button>
+    </div>
+    <div class="slist" id="slist"><div class="sempty">Escribe el nombre de un canal o elige un tema. Busca en todos los países, sin cambiar tu lista de la izquierda.</div></div>
+  </aside>
 </div>
 
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
@@ -323,7 +414,16 @@ function toast(t){const n=$("toast");n.textContent=t;n.hidden=false;clearTimeout
 
 /* ================= Estado ================= */
 const IN_APP=/UltimateTVApp/.test(navigator.userAgent); // dentro de la app de Android TV
-const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,geo:true,live:true},store.get("state",{}));
+const S=Object.assign({tab:"explore",country:"CO",cat:"",lang:"",https:!IN_APP,geo:true,live:true,mode:"auto",layout:"classic"},store.get("state",{}));
+/* Modo PC / TV: se detecta solo y se puede cambiar en Ajustes */
+function detectMode(){
+  const ua=navigator.userAgent;
+  if(IN_APP||/Android TV|GoogleTV|Google TV|SmartTV|SMART-TV|SmartHub|Tizen|Web0S|webOS|NetCast|BRAVIA|AFT[A-Z]|CrKey|HbbTV|Roku|VIDAA|Hisense|PhilipsTV|Viera|AQUOS|\bTV\b/i.test(ua))return "tv";
+  let fine=true;try{fine=matchMedia("(pointer:fine)").matches;}catch(e){}
+  if(!fine&&(navigator.maxTouchPoints||0)===0)return "tv";   // sin mouse y sin pantalla táctil = control remoto
+  return "pc";
+}
+let MODE="pc";
 /* Salud de canales: se revisa desde este mismo aparato (lo que de verdad se puede ver aquí).
    Un canal caído se oculta; a las 6 horas se vuelve a revisar y, si regresó, aparece otra vez. */
 const TTL=6*3600e3;
@@ -340,7 +440,7 @@ let view=[],shown=0,lastRow=null;
 let ctx={list:[],i:-1,name:""},src=0,hls=null,playingId=null;
 const listEl=$("list"),V=$("video");
 
-function save(){store.set("state",{tab:S.tab,country:S.country,cat:S.cat,lang:S.lang,https:S.https,geo:S.geo,live:S.live});}
+function save(){store.set("state",{tab:S.tab,country:S.country,cat:S.cat,lang:S.lang,https:S.https,geo:S.geo,live:S.live,mode:S.mode,layout:S.layout});}
 const snap=g=>({id:g.id,name:g.name,logo:g.logo||"",country:g.country||"",cats:g.cats||["undefined"],langs:g.langs||[],sources:g.sources.map(s=>({url:s.url,quality:s.quality||"",labels:s.labels||[]})),custom:!!g.custom});
 const isFav=id=>favs.some(x=>x.id===id);
 const isMine=id=>mine.some(x=>x.id===id);
@@ -418,7 +518,7 @@ async function load(){
   }
   ALL.sort((a,b)=>a.name.localeCompare(b.name,"es"));
   if(S.country&&!countries[S.country])S.country="";
-  ready=true;startChecker();
+  ready=true;startChecker();if(SQ.value.trim())srender();
   if(S.tab==="explore"&&(mine.length||favs.length)&&!store.get("visited",false)){/* primera vez: quedarse en Explorar */}
   store.set("visited",true);
   setTab(S.tab,true);
@@ -568,6 +668,7 @@ listEl.addEventListener("click",e=>{
   if(g.id===playingId){enterFull();return;}   // OK sobre el canal que ya suena = pantalla completa
   ctx={list:view.slice(),i,name:$("listTitle").textContent};
   tune(i);
+  if(MODE==="tv")enterFull();                   // en el televisor, directo a pantalla completa (como Google TV)
 });
 
 /* ================= Reproductor ================= */
@@ -637,8 +738,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b)
 /* Pantalla completa */
 let osdT;
 const isFull=()=>document.body.classList.contains("full");
+let fullAt=0;
 function enterFull(){
-  if(!current())return;
+  if(!current())return;fullAt=Date.now();
   document.body.classList.add("full");
   if(!IN_APP){try{const el=document.documentElement;const p=(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);if(p&&p.catch)p.catch(()=>{});}catch(e){}}
   showOSD();
@@ -653,37 +755,108 @@ function exitFull(fromPop){
 }
 function showOSD(focusBtn){const o=$("osd");o.classList.remove("hide");clearTimeout(osdT);osdT=setTimeout(hideOSD,5000);if(focusBtn)o.querySelector(".act:not([hidden])").focus({preventScroll:true});}
 function hideOSD(){const o=$("osd");if(o.contains(document.activeElement))document.activeElement.blur();o.classList.add("hide");}
-$("screen").addEventListener("click",e=>{if(e.target.closest(".act")||e.target.closest(".fmenu"))return;if(!isFull()){if(current())enterFull();return;}$("osd").classList.contains("hide")?showOSD():hideOSD();});
-$("screen").addEventListener("mousemove",()=>{if(isFull())showOSD();});
+$("screen").addEventListener("click",e=>{if(e.target.closest(".act,.fmenu,.fback,.fedge"))return;if(!isFull()){if(current())enterFull();return;}$("osd").classList.contains("hide")?showOSD():hideOSD();});
+$("screen").addEventListener("dblclick",e=>{if(e.target.closest(".act,.fmenu,.fback,.fedge"))return;if(isFull()&&Date.now()-fullAt<700)return;isFull()?exitFull():(current()&&enterFull());});
+// El mouse se esconde solo; al borde izquierdo salen los canales y abajo los controles
+let curT;
+document.addEventListener("mousemove",e=>{
+  document.body.classList.remove("nocur");clearTimeout(curT);
+  curT=setTimeout(()=>{if(isFull()&&!fmOpen())document.body.classList.add("nocur");},2500);
+  if(!isFull())return;
+  if(e.clientX<=24&&!fmOpen()){fmShow();return;}
+  if(!fmOpen()&&e.clientY>innerHeight*0.72)showOSD();
+},{passive:true});
+$("fBack").onclick=()=>exitFull();
+$("fFind").onclick=()=>fmShow("all",true);
+$("fEdge").onclick=()=>fmShow();
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&isFull())exitFull();});
 
 /* Menú flotante de canales (sobre el video, sin salir de pantalla completa) */
 const FM=$("fmenu"),FL=$("flist");let fm={tab:"ctx",list:[]},fmT;
 const fmOpen=()=>FM.classList.contains("open");
-function fmList(t){return t==="mine"?mine.map(fresh):t==="fav"?favs.map(fresh):ctx.list;}
+const FQ=$("fq");
+const fmNames={mine:"Mis canales",fav:"Favoritos",all:"Todo el mundo"};
+function fmList(t){
+  const q=FQ.value.trim();
+  if(t==="all")return q?search(q):ALL.filter(baseOk);
+  const L=t==="mine"?mine.map(fresh):t==="fav"?favs.map(fresh):ctx.list;
+  if(!q)return L;
+  const w=norm(q).split(" ").filter(Boolean);
+  return L.filter(g=>{const n=g.nAll||norm(g.name);return w.every(x=>n.includes(x));});
+}
 function fmRender(focusPlaying){
   fm.list=fmList(fm.tab);
+  const q=FQ.value.trim(),typing=document.activeElement===FQ;
   FM.querySelectorAll(".ftab").forEach(b=>b.classList.toggle("on",b.dataset.ft===fm.tab));
-  $("fcount").textContent=fm.list.length?fm.list.length+" canales":"";
-  if(!fm.list.length){FL.innerHTML=`<div class="fempty">${fm.tab==="mine"?"Aún no tienes canales propios.<br>Mientras ves uno, oprime ▶ y elige “＋ Mis canales”.":"Aún no tienes favoritos.<br>Mientras ves un canal, oprime ▶ y elige “☆ Favorito”."}</div>`;return;}
+  FQ.placeholder=fm.tab==="all"?"Buscar en todo el mundo…":"Buscar en esta lista…";
+  $("fcount").textContent=fm.list.length?fm.list.length.toLocaleString("es")+" canales":"";
+  const cur=current();$("fnow").textContent=cur?"▶ Viendo: "+cur.name:"";
+  if(!fm.list.length){FL.innerHTML=`<div class="fempty">${q?`No hay canales con “${esc(q)}” aquí.<br>Oprime ▶ hasta “🌎 Todo” para buscar en todo el mundo.`:fm.tab==="mine"?"Aún no tienes canales propios.<br>Mientras ves uno, oprime ▶ y elige “＋ Mis canales”.":"Aún no tienes favoritos.<br>Mientras ves un canal, oprime ▶ y elige “☆ Favorito”."}</div>`;return;}
   const prev=document.activeElement&&FL.contains(document.activeElement)?+document.activeElement.dataset.fi:-1;
   FL.innerHTML=fm.list.slice(0,400).map((g,i)=>rowHTML(g,i).replace('class="row f','class="row frow f').replace(`data-i="${i}"`,`data-fi="${i}"`)).join("");
+  if(typing)return;
   let fi=focusPlaying?fm.list.findIndex(g=>g.id===playingId):prev;if(fi<0)fi=0;
   const el=FL.querySelector(`[data-fi="${fi}"]`);if(el){el.focus({preventScroll:true});keepIn(FL,el);}
 }
-function fmShow(tab){hideOSD();fm.tab=tab||(ctx.name==="Mis canales"?"mine":ctx.name==="Favoritos"?"fav":"ctx");FM.classList.add("open");fmRender(true);fmKick();}
+function fmShow(tab,find){hideOSD();document.body.classList.remove("nocur");fm.tab=tab||(ctx.name==="Mis canales"?"mine":ctx.name==="Favoritos"?"fav":ctx.name==="Todo el mundo"?"all":"ctx");FM.classList.add("open");if(find){FQ.focus();fmRender(false);}else fmRender(true);fmKick();}
 function fmClose(){if(!fmOpen())return false;FM.classList.remove("open");clearTimeout(fmT);if(FM.contains(document.activeElement))document.activeElement.blur();return true;}
-function fmKick(){clearTimeout(fmT);fmT=setTimeout(fmClose,12000);}
-function fmTab(d){const t=["mine","fav","ctx"];fm.tab=t[(t.indexOf(fm.tab)+d+3)%3];fmRender(true);fmKick();}
-function fmPick(i){const name=fm.tab==="mine"?"Mis canales":fm.tab==="fav"?"Favoritos":ctx.name;ctx={list:fm.list.slice(),i,name};tune(i);fmRender(true);fmKick();}
+function fmKick(){clearTimeout(fmT);fmT=setTimeout(()=>{if(document.activeElement!==FQ)fmClose();else fmKick();},15000);}
+function fmTab(d){const t=["mine","fav","ctx","all"];fm.tab=t[(t.indexOf(fm.tab)+d+4)%4];fmRender(true);fmKick();}
+function fmPick(i){const name=fmNames[fm.tab]||ctx.name;ctx={list:fm.list.slice(),i,name};tune(i);fmRender(true);fmKick();}
+let fqT;FQ.addEventListener("input",()=>{fmKick();clearTimeout(fqT);fqT=setTimeout(()=>fmRender(false),200);});
+FM.addEventListener("mousemove",fmKick,{passive:true});
+FM.addEventListener("mouseleave",()=>{if(MODE==="pc"&&document.activeElement!==FQ){clearTimeout(fmT);fmT=setTimeout(fmClose,700);}});
 FM.addEventListener("click",e=>{const t=e.target.closest(".ftab");if(t){fm.tab=t.dataset.ft;fmRender(true);fmKick();return;}const r=e.target.closest(".frow");if(r)fmPick(+r.dataset.fi);});
 function fmKey(e,dir){
   fmKick();const a=document.activeElement,i=a&&a.dataset.fi!=null?+a.dataset.fi:-1;
+  if(a===FQ){
+    if(dir==="down"||e.key==="Enter"){e.preventDefault();clearTimeout(fqT);fmRender(false);const n=FL.querySelector(".frow");if(n){n.focus({preventScroll:true});keepIn(FL,n);}return true;}
+    if(dir==="left"||dir==="right"){const at=FQ.selectionStart,len=FQ.value.length;if(at==null||(dir==="left"&&at>0)||(dir==="right"&&at<len))return false;e.preventDefault();fmTab(dir==="right"?1:-1);FQ.focus();return true;}
+    return false;
+  }
+  if(dir==="up"&&i===0){e.preventDefault();FQ.focus();return true;}
   if(dir==="up"||dir==="down"){e.preventDefault();const n=FL.querySelector(`[data-fi="${Math.max(0,Math.min(fm.list.length-1,i+(dir==="down"?1:-1)))}"]`)||FL.querySelector(".frow");if(n){n.focus({preventScroll:true});keepIn(FL,n);}return true;}
   if(dir==="left"||dir==="right"){e.preventDefault();fmTab(dir==="right"?1:-1);return true;}
   if(e.key==="Enter"||e.key===" "){e.preventDefault();if(i>=0)fmPick(i);return true;}
+  if(e.key.length===1&&/[\p{L}\p{N}]/u.test(e.key)){FQ.focus();return false;}   // escribir con teclado = buscar
   return false;
 }
+
+/* Panel derecho de búsqueda (diseño Panel, estilo Twitch) */
+const SQ=$("sq"),SL=$("slist");let sres=[];
+function srender(){
+  const q=SQ.value.trim();
+  document.querySelectorAll(".qchip").forEach(c=>c.classList.toggle("on",norm(c.dataset.q)===norm(q)));
+  if(!q){sres=[];$("scount").textContent="";SL.innerHTML='<div class="sempty">Escribe el nombre de un canal o elige un tema. Busca en todos los países, sin cambiar tu lista de la izquierda.</div>';return;}
+  if(!ready){SL.innerHTML='<div class="sempty">Cargando la guía de canales…</div>';return;}
+  sres=search(q).slice(0,200);
+  $("scount").textContent=sres.length?sres.length+(sres.length===200?"+":"")+" canales":"";
+  SL.innerHTML=sres.length?sres.map((g,i)=>rowHTML(g,i).replace('class="row f','class="row srow f').replace(`data-i="${i}"`,`data-si="${i}"`)).join(""):`<div class="sempty">No encontramos “${esc(q)}”. Prueba con menos palabras.</div>`;
+  if(sres.length&&ready)enqueue(sres,60);
+}
+let sqT;SQ.addEventListener("input",()=>{clearTimeout(sqT);sqT=setTimeout(srender,220);});
+SQ.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(sqT);srender();const r=SL.querySelector(".srow");if(r)r.focus({preventScroll:true});}});
+$("qchips").addEventListener("click",e=>{const c=e.target.closest(".qchip");if(!c)return;SQ.value=norm(SQ.value)===norm(c.dataset.q)?"":c.dataset.q;srender();});
+SL.addEventListener("click",e=>{const r=e.target.closest(".srow");if(!r)return;const i=+r.dataset.si;ctx={list:sres.slice(),i,name:"Búsqueda: "+SQ.value.trim()};tune(i);
+  SL.querySelectorAll(".srow.playing").forEach(x=>x.classList.remove("playing"));r.classList.add("playing");});
+
+/* Modo y diseño */
+function applyMode(){
+  MODE=S.mode==="auto"?detectMode():S.mode;
+  const h=document.documentElement.classList;
+  h.toggle("m-tv",MODE==="tv");h.toggle("m-pc",MODE==="pc");
+  ["classic","theater","twitch"].forEach(l=>h.toggle("l-"+l,MODE==="pc"&&S.layout===l));
+  $("modeBtn").textContent=MODE==="tv"?"📺 TV":"🖥 PC";
+  $("modeBtn").title=(S.mode==="auto"?"Detectado automáticamente: ":"Elegido a mano: ")+(MODE==="tv"?"versión TV":"versión PC")+". Clic para cambiar.";
+  document.querySelectorAll(".vbtn").forEach(b=>b.classList.toggle("on",b.dataset.l===S.layout));
+  $("help").innerHTML=MODE==="tv"
+    ?'<span><kbd>▲ ▼</kbd>moverse</span><span><kbd>OK</kbd>ver en pantalla completa</span><span><kbd>▶</kbd>guardar en Mis canales</span><span><kbd>Atrás</kbd>volver</span>'
+    :'<span><kbd>Clic</kbd>ver aquí</span><span><kbd>Doble clic</kbd>pantalla completa</span><span>En pantalla completa: mouse al <b>borde izquierdo</b> = canales · <kbd>Esc</kbd> salir</span>';
+  if(S.layout==="twitch")srender();
+}
+$("views").addEventListener("click",e=>{const b=e.target.closest(".vbtn");if(!b)return;S.layout=b.dataset.l;save();applyMode();
+  toast(S.layout==="theater"?"Diseño Cine: video grande arriba":S.layout==="twitch"?"Diseño Panel: canales a la izquierda y buscador a la derecha":"Diseño Clásico");});
+$("modeBtn").onclick=()=>{S.mode=MODE==="tv"?"pc":"tv";save();applyMode();refreshList();toast(MODE==="tv"?"📺 Versión TV: hecha para el control remoto":"🖥 Versión PC: hecha para mouse y teclado");};
 
 /* Cambio de canal por número (en Mis canales) */
 let zapBuf="",zapT;
@@ -753,13 +926,26 @@ function openAdd(){
     store.set("mine",mine);closeSheet();toast(`📌 “${name}” es tu canal ${mine.length}`);if(S.tab!=="mine")setTab("mine");else refreshList();});
 }
 function openSettings(){
-  const html=`<button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>${IN_APP?"Solo enlaces seguros (https)":"Solo canales que se ven en el navegador"}<small>${IN_APP?"En la app puedes ver también los canales http. Actívalo solo si prefieres menos canales.":"Oculta los enlaces “http” que el navegador bloquea."}</small></span></button>
+  const det=detectMode()==="tv"?"TV":"PC";
+  const html=`<h4>Versión</h4><div class="choices">
+      ${choice("data-mode","auto","✨","Automático (se detectó "+det+")","",S.mode==="auto")}
+      ${choice("data-mode","pc","🖥","Versión PC (mouse)","",S.mode==="pc")}
+      ${choice("data-mode","tv","📺","Versión TV (control)","",S.mode==="tv")}</div>
+    <h4>Diseño en la versión PC</h4><div class="choices">
+      ${choice("data-layout","classic","▤","Clásico","",S.layout==="classic")}
+      ${choice("data-layout","theater","▭","Cine (video grande)","",S.layout==="theater")}
+      ${choice("data-layout","twitch","▥","Panel con buscador","",S.layout==="twitch")}</div>
+    <h4>Canales</h4>
+    <button class="opt f" id="oH" type="button" aria-pressed="${S.https}"><span class="sw"></span><span>${IN_APP?"Solo enlaces seguros (https)":"Solo canales que se ven en el navegador"}<small>${IN_APP?"En la app puedes ver también los canales http. Actívalo solo si prefieres menos canales.":"Oculta los enlaces “http” que el navegador bloquea."}</small></span></button>
     <button class="opt f" id="oL" type="button" aria-pressed="${S.live}"><span class="sw"></span><span>Ocultar canales sin señal<small>Se revisan solos; cuando un canal vuelve a transmitir, aparece de nuevo.${SERVER_AT?" Última revisión general: "+new Date(SERVER_AT).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"})+".":""}</small></span></button>
     <button class="opt f" id="oG" type="button" aria-pressed="${S.geo}"><span class="sw"></span><span>Ocultar canales con bloqueo por país<small>Algunos canales solo se ven desde su propio país.</small></span></button>
     ${IN_APP?"":`<button class="opt f" id="oX" type="button"><span>⤓</span><span>Descargar la lista actual en M3U<small>Para abrirla en TiviMate, VLC u otra app de IPTV.</small></span></button>`}
     ${mine.length&&!IN_APP?`<button class="opt f" id="oM" type="button"><span>⤓</span><span>Descargar Mis canales en M3U<small>${mine.length} canales guardados.</small></span></button>`:""}
     <p class="note">Canales públicos reunidos por <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. Ultimate TV no aloja video; algunos canales pueden estar caídos o no emitir las 24 horas. Tus favoritos y Mis canales se guardan solo en este navegador.</p>`;
   openSheet("Ajustes",html,e=>{
+    const c=e.target.closest("[data-mode],[data-layout]");
+    if(c){c.parentNode.querySelectorAll(".choice").forEach(x=>x.classList.toggle("on",x===c));
+      if(c.dataset.mode)S.mode=c.dataset.mode;else S.layout=c.dataset.layout;save();applyMode();refreshList();return;}
     const b=e.target.closest(".opt");if(!b)return;
     if(b.id==="oH"){S.https=!S.https;b.setAttribute("aria-pressed",S.https);save();refreshList();}
     if(b.id==="oL"){S.live=!S.live;b.setAttribute("aria-pressed",S.live);save();refreshList();}
@@ -790,9 +976,9 @@ function voice(){try{const r=new SR();r.lang="es-CO";r.onresult=e=>{$("q").value
 const DIRS={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",Up:"up",Down:"down",Left:"left",Right:"right"};
 function scope(){if(!$("sheet").hidden)return $("sheet");if(isFull())return $("osd");return document;}
 function shownEl(el){if(el.closest("[hidden]"))return false;const r=el.getBoundingClientRect();if(!r.width||!r.height)return false;
-  if(el.classList.contains("row")){const b=listEl.getBoundingClientRect();return r.bottom>b.top+4&&r.top<b.bottom-4;}
-  const sb=$("sheetBody");if(sb.contains(el)){const b=sb.getBoundingClientRect();return r.bottom>b.top&&r.top<b.bottom;}
+  const box=el.closest(".list,.slist,.flist,#sheetBody");if(box){const b=box.getBoundingClientRect();return r.bottom>b.top+4&&r.top<b.bottom-4;}
   return true;}
+const gridList=()=>document.documentElement.classList.contains("l-theater")&&innerWidth>820;
 function geo(dir,from,cands){
   const r=from.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bd=Infinity;
   // izquierda/derecha: primero lo que está en la misma franja horizontal
@@ -811,7 +997,7 @@ function nav(dir){
   const inSc=a&&a!==document.body&&sc.contains(a)&&a.classList.contains("f");
   if(!inSc){const f=(sc===document?(listEl.querySelector(".row.playing")||lastRow||listEl.querySelector(".row")):null)||sc.querySelector(".choice.on")||[...sc.querySelectorAll(".f")].find(shownEl);if(f){if(f.classList.contains("row"))focusRow(f);else f.focus({preventScroll:true});}return;}
   // Dentro de la lista: arriba/abajo de fila en fila
-  if(a.classList.contains("row")){
+  if(a.classList.contains("row")&&listEl.contains(a)&&!gridList()){
     const i=+a.dataset.i;
     if(dir==="down"){const n=rowAt(i+1);if(n)focusRow(n);return;}
     if(dir==="up"){if(i>0){focusRow(rowAt(i-1));return;}const t=[...$("tools").querySelectorAll(".f")].pop()||document.querySelector(".tab.on");if(t)t.focus({preventScroll:true});return;}
@@ -823,7 +1009,8 @@ function nav(dir){
   // Desde la pantalla hacia la izquierda: volver a la fila donde estabas
   if(dir==="left"&&$("now").contains(a)&&(!t||t.classList.contains("row"))&&a===$("now").querySelector(".act:not([hidden])")){const r=(lastRow&&document.contains(lastRow))?lastRow:listEl.querySelector(".row");if(r){focusRow(r);return;}}
   if(dir==="down"&&!t&&($("tools").contains(a)||a.classList.contains("tab"))){const r=listEl.querySelector(".row");if(r){focusRow(r);return;}}
-  if(t){if(t.classList.contains("row"))focusRow(t);else{t.focus({preventScroll:true});if($("sheetBody").contains(t))keepIn($("sheetBody"),t);}}
+  if(gridList()&&listEl.contains(a)&&dir==="down"&&(!t||!listEl.contains(t))&&shown<view.length){renderMore();t=geo(dir,a,[...listEl.querySelectorAll(".row")]);}
+  if(t){if(t.classList.contains("row")&&listEl.contains(t))focusRow(t);else{t.focus({preventScroll:true});const box=t.closest(".slist,#sheetBody");if(box)keepIn(box,t);}}
 }
 function back(){
   if(closeSheet())return true;
@@ -838,6 +1025,7 @@ document.addEventListener("keydown",e=>{
   const kc=e.keyCode;
   if(e.key==="Escape"||e.key==="GoBack"||e.key==="BrowserBack"||(e.key==="Backspace"&&!typing)||kc===461||kc===10009){if(back()){e.preventDefault();e.stopPropagation();}return;}
   if(e.key==="ContextMenu"||kc===93||e.key==="ColorF0Red"||kc===403){if(current()){e.preventDefault();if(!isFull())enterFull();fmOpen()?fmClose():fmShow();}return;}
+  if(isFull()&&fmOpen()&&e.key.length===1&&!typing&&!/^[0-9]$/.test(e.key)){fmKey(e,dir);return;}
   if(/^[0-9]$/.test(e.key)&&!typing&&$("sheet").hidden){e.preventDefault();zapDigit(e.key);return;}
   if(e.key==="ChannelUp"||e.key==="PageUp"){if(current()){e.preventDefault();zap(-1);}return;}
   if(e.key==="ChannelDown"||e.key==="PageDown"){if(current()){e.preventDefault();zap(1);}return;}
@@ -872,6 +1060,7 @@ function tick(){const d=new Date();$("clock").textContent=d.toLocaleTimeString("
 tick();setInterval(tick,15000);
 
 /* Arranque */
+applyMode();
 setTab(S.tab,true);
 load().catch(err=>{console.error(err);listEl.innerHTML=`<div class="state"><div class="big">📡</div><strong>No se pudo cargar la guía de canales</strong><span>Revisa la conexión a internet y vuelve a intentarlo.</span><button class="act primary f" type="button" onclick="location.reload()">Reintentar</button></div>`;
   if(mine.length||favs.length){ready=true;if(S.tab==="explore"||S.tab==="search")setTab(mine.length?"mine":"fav",true);}});

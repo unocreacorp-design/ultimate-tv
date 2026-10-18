@@ -263,15 +263,20 @@ html.m-tv{font-size:clamp(16px,1.12vw,27px)}
 }
 /* Diseños de computador (solo en pantallas anchas) */
 @media (min-width:821px){
-  .l-theater .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:.9rem}
-  .l-theater .stage{grid-row:2;flex-direction:row;align-items:stretch;gap:1rem}
-  .l-theater .screen{height:56vh;width:auto;max-height:none;max-width:72%;flex-shrink:0}
-  .l-theater .now{flex:1;min-width:0;justify-content:center}
-  .l-theater .now .acts{flex-direction:column;align-items:stretch}
-  .l-theater .help{display:none}
-  .l-theater .side{grid-row:3}
-  .l-theater .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));align-content:start}
-  .l-theater .row:focus-visible{transform:none}
+  /* Cine = modo teatro de YouTube: video de borde a borde, abajo a la izquierda el canal y a la derecha la lista */
+  html.l-theater,html.l-theater body{height:auto;min-height:100%}
+  html.l-theater body{overflow-y:auto}
+  .l-theater .app{height:auto;min-height:100%;grid-template-columns:minmax(0,1fr) minmax(22rem,30%);grid-template-rows:auto auto auto 1fr;
+    grid-template-areas:"top top" "screen screen" "now side" "help side";gap:0 1.6rem}
+  .l-theater .top{grid-area:top}
+  .l-theater .stage{display:contents}
+  .l-theater .screen{grid-area:screen;width:auto;height:min(74vh,56.25vw);max-width:none;max-height:none;aspect-ratio:auto;border-radius:0;box-shadow:none;
+    margin:0 calc(-1 * max(16px, env(safe-area-inset-right,0px))) 1.2rem calc(-1 * max(16px, env(safe-area-inset-left,0px)))}
+  .l-theater .now{grid-area:now;align-self:start;background:none;border:0;backdrop-filter:none;padding:0 0 1rem;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem}
+  .l-theater .nowtop h3{font-size:1.5rem}
+  .l-theater .help{grid-area:help;align-self:start}
+  .l-theater .side{grid-area:side;align-self:start}
+  .l-theater .list{overflow:visible;flex:none}
 }
 @media (min-width:821px) and (max-width:1199px){.l-twitch .views .vbtn[data-l="twitch"]{display:none}}
 @media (min-width:1200px){
@@ -297,7 +302,7 @@ body.full .screen{height:auto!important;width:auto!important;max-width:none!impo
     </nav>
     <div class="views" id="views" role="group" aria-label="Diseño">
       <button class="vbtn f" data-l="classic" type="button" title="Lista a la izquierda, video a la derecha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>Clásico</button>
-      <button class="vbtn f" data-l="theater" type="button" title="Video grande arriba y canales abajo, como YouTube"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18"/></svg>Cine</button>
+      <button class="vbtn f" data-l="theater" type="button" title="Video de borde a borde y canales abajo a la derecha, como el modo cine de YouTube"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18"/></svg>Cine</button>
       <button class="vbtn f" data-l="twitch" type="button" title="Canales a un lado y buscador al otro, como Twitch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16"/></svg>Panel</button>
     </div>
     <button class="modebtn f" id="modeBtn" type="button" title="Cambiar entre versión PC y versión TV">🖥 PC</button>
@@ -646,11 +651,13 @@ function renderMore(){
   let h="";for(let i=shown;i<n;i++)h+=rowHTML(view[i],i);
   listEl.insertAdjacentHTML("beforeend",h);shown=n;
 }
+window.addEventListener("scroll",()=>{if(innerHeight+scrollY>document.documentElement.scrollHeight-600)renderMore();},{passive:true});
 listEl.addEventListener("scroll",()=>{if(listEl.scrollTop+listEl.clientHeight>listEl.scrollHeight-500)renderMore();},{passive:true});
 document.addEventListener("error",e=>{const t=e.target;if(t.tagName==="IMG"&&t.dataset.ph){const s=document.createElement("span");s.className="ph";s.textContent=t.dataset.ph;t.replaceWith(s);}},true);
 function rowAt(i){while(i>=shown&&shown<view.length)renderMore();return listEl.querySelector(`.row[data-i="${i}"]`);}
 // Mantiene la fila visible moviendo SOLO la lista (nunca la página)
 function keepVisible(el){
+  if(document.documentElement.classList.contains("l-theater")&&innerWidth>820&&listEl.scrollHeight<=listEl.clientHeight+2){el.scrollIntoView({block:"nearest"});return;}   // diseño Cine: se mueve la página
   const box=listEl.getBoundingClientRect(),r=el.getBoundingClientRect(),pad=Math.min(80,box.height/4);
   if(r.top<box.top+pad)listEl.scrollTop-=(box.top+pad-r.top);
   else if(r.bottom>box.bottom-pad)listEl.scrollTop+=(r.bottom-(box.bottom-pad));
@@ -978,7 +985,7 @@ function scope(){if(!$("sheet").hidden)return $("sheet");if(isFull())return $("o
 function shownEl(el){if(el.closest("[hidden]"))return false;const r=el.getBoundingClientRect();if(!r.width||!r.height)return false;
   const box=el.closest(".list,.slist,.flist,#sheetBody");if(box){const b=box.getBoundingClientRect();return r.bottom>b.top+4&&r.top<b.bottom-4;}
   return true;}
-const gridList=()=>document.documentElement.classList.contains("l-theater")&&innerWidth>820;
+const gridList=()=>false;
 function geo(dir,from,cands){
   const r=from.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bd=Infinity;
   // izquierda/derecha: primero lo que está en la misma franja horizontal
